@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../OOP_hard_sphere_event_chain')
-
 from unittest import TestCase
 from SnapShot import View2D
 from Structure import Sphere
@@ -34,5 +31,8 @@ class TestView2D(TestCase):
         self.assertEqual(1, 1, '')
 
     def test_save_video(self):
-        view.save_video('tests_video', fps=1)
+        vid_name = 'tests_video'
+        if os.path.exists(view.output_dir+'/'+vid_name):
+            os.remove(view.output_dir+'/'+vid_name)
+        view.save_video(vid_name, fps=0.2)
         self.assertEqual(1, 1, '')
