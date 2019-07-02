@@ -19,20 +19,16 @@ class TestView2D(TestCase):
 
     def test_spheres_snapshot(self):
         view.spheres_snapshot('debug spheres', spheres, 'DebugSpheres')
-        self.assertEqual(1, 1, '')
 
     def test_step_snapshot(self):
         view.step_snapshot('debug step', spheres, 1, 'DebugStep', (0.2, 0.2), 1)
-        self.assertEqual(1,1,'')
 
     def test_array_of_cells_snapshot(self):
         cells = [Cell((0, 0), [1, 1], spheres=spheres[:-1]), Cell((1, 1), [1, 1], spheres=[spheres[-1]])]
         view.array_of_cells_snapshot('debug cells', ArrayOfCells(2, boundaries, cells), 'DebugCells')
-        self.assertEqual(1, 1, '')
 
     def test_save_video(self):
         vid_name = 'tests_video'
         if os.path.exists(view.output_dir+'/'+vid_name):
             os.remove(view.output_dir+'/'+vid_name)
         view.save_video(vid_name, fps=0.2)
-        self.assertEqual(1, 1, '')
