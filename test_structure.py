@@ -241,16 +241,19 @@ class TestArrayOfCells(TestCase):
 
     def test_overlap_2_cells(self):
         while True:
-            cell1 = Cell((0, 0), [1, 1], (0,))
+            cell1 = Cell((0.3, 0.3), [1, 1], (0,))
             cell1.random_generate_spheres(3, 0.3)
-            cell2 = Cell((1, 0), [1, 1], (1,))
+            cell2 = Cell((0.3, 1.3), [1, 1], (1,))
             cell2.random_generate_spheres(3, 0.3)
             if not ArrayOfCells.overlap_2_cells(cell1, cell2):
-                bound = CubeBoundaries([2, 2], 2 * [BoundaryType.CYCLIC])
+                bound = CubeBoundaries([2.6, 2.6], 2 * [BoundaryType.CYCLIC])
                 arr = ArrayOfCells(2, bound, [cell1, cell2])
                 draw = View2D('test_garb', bound)
                 draw.array_of_cells_snapshot('Test overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
+
+    def test_cushioning_array_for_boundary_cond(self):
+        self.fail()
 
     def test_legal_configuration(self):
         self.fail()
