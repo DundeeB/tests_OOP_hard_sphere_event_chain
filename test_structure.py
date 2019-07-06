@@ -131,6 +131,13 @@ class TestCubeBoundaries(TestCase):
 
         # TBD implement test for 3d
 
+    def test_sphere_dist(self):
+        boundaries = CubeBoundaries([20, 20], [BoundaryType.CYCLIC for _ in range(2)])
+        sphere1 = Sphere((19, 5), 2.0)
+        sphere2 = Sphere((4, 5), 2.0)
+        self.assertAlmostEqual(boundaries.sphere_dist(sphere1, sphere2), 5.0)
+        self.assertAlmostEqual(sphere1.sphere_dist(sphere2), 15)
+
 
 class TestMetric(TestCase):
     def test_dist_to_boundary(self):
@@ -241,13 +248,13 @@ class TestArrayOfCells(TestCase):
 
     def test_overlap_2_cells(self):
         while True:
-            cell1 = Cell((0.3, 0.3), [1, 1], (0,))
-            cell1.random_generate_spheres(3, 0.3)
-            cell2 = Cell((0.3, 1.3), [1, 1], (1,))
-            cell2.random_generate_spheres(3, 0.3)
-            if not ArrayOfCells.overlap_2_cells(cell1, cell2):
-                bound = CubeBoundaries([2.6, 2.6], 2 * [BoundaryType.CYCLIC])
-                arr = ArrayOfCells(2, bound, [cell1, cell2])
+            cell1 = Cell((0, 0), [1, 1], (0,))
+            cell1.random_generate_spheres(3, 0.2)
+            cell2 = Cell((0, 1), [1, 1], (1,))
+            cell2.random_generate_spheres(3, 0.2)
+            bound = CubeBoundaries([2, 2], 2 * [BoundaryType.CYCLIC])
+            arr = ArrayOfCells(2, bound, [[cell1], [cell2]])
+            if not arr.overlap_2_cells(cell1, cell2):
                 draw = View2D('test_garb', bound)
                 draw.array_of_cells_snapshot('Test overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
