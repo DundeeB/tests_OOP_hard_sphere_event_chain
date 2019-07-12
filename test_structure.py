@@ -211,6 +211,7 @@ class TestCell(TestCase):
 
 
 class TestArrayOfCells(TestCase):
+
     @staticmethod
     def construct_some_arr_cell():
         spheres = []
@@ -295,7 +296,7 @@ class TestArrayOfCells(TestCase):
 
     def test_legal_configuration(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries(arr.boundaries.edges, [BoundaryType.WALL, BoundaryType.WALL])
+        arr.boundaries = CubeBoundaries(arr.boundaries.edges, [BoundaryType.CYCLIC, BoundaryType.WALL])
         arr.random_generate_spheres(5, 0.1)
         draw = View2D('test_garb', arr.boundaries)
         draw.array_of_cells_snapshot('Test Random Generate spheres and legal configuration',
