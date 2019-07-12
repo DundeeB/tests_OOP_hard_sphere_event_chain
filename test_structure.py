@@ -205,9 +205,10 @@ class TestCell(TestCase):
             self.assertTrue(z > 0 and z < 1)
 
     def test_transform(self):
-        cell = Cell((0, 0), [4, 4], (0, 0))
+        cell = Cell((0, 0), [4, 4], (0, 0), [Sphere((0, 1, 7), 1)])
         cell.transform((1, 1))
         self.assertEqual(cell.site, (1, 1))
+        assert_list(self, cell.spheres[0].center, (1, 2, 7))
 
 
 class TestArrayOfCells(TestCase):
@@ -215,21 +216,38 @@ class TestArrayOfCells(TestCase):
     @staticmethod
     def construct_some_arr_cell():
         spheres = []
-        bound = CubeBoundaries([2, 2], 2 * [BoundaryType.CYCLIC])
+        bound = CubeBoundaries([3, 3], 2 * [BoundaryType.CYCLIC])
         cell1 = Cell((0, 0), [1, 1], (0, 0))
         cell1.random_generate_spheres(3, 3 * [0.1])
         for sphere in cell1.spheres: spheres.append(sphere)
         cell2 = Cell((1.0, 0), [1, 1], (1, 0))
         cell2.random_generate_spheres(3, 3 * [0.1])
         for sphere in cell2.spheres: spheres.append(sphere)
-        cell3 = Cell((0, 1.0), [1, 1], (0, 1))
+        cell3 = Cell((2.0, 0), [1, 1], (0, 1))
         cell3.random_generate_spheres(3, 3 * [0.1])
         for sphere in cell3.spheres: spheres.append(sphere)
-        cell4 = Cell((1.0, 1.0), [1, 1], (1, 1))
+        cell4 = Cell((0.0, 1.0), [1, 1], (1, 1))
         cell4.random_generate_spheres(3, 3 * [0.1])
         for sphere in cell4.spheres: spheres.append(sphere)
-        cells = [cell1, cell2, cell3, cell4]
-        return ArrayOfCells(2, bound, cells=[[cell1, cell2], [cell3, cell4]]), spheres, cells
+        cell5 = Cell((1.0, 1.0), [1, 1], (0, 0))
+        cell5.random_generate_spheres(3, 3 * [0.1])
+        for sphere in cell5.spheres: spheres.append(sphere)
+        cell6 = Cell((2.0, 1.0), [1, 1], (0, 0))
+        cell6.random_generate_spheres(3, 3 * [0.1])
+        for sphere in cell6.spheres: spheres.append(sphere)
+        cell7 = Cell((0.0, 2.0), [1, 1], (0, 0))
+        cell7.random_generate_spheres(3, 3 * [0.1])
+        for sphere in cell7.spheres: spheres.append(sphere)
+        cell8 = Cell((1.0, 2.0), [1, 1], (0, 0))
+        cell8.random_generate_spheres(3, 3 * [0.1])
+        for sphere in cell8.spheres: spheres.append(sphere)
+        cell9 = Cell((2.0, 2.0), [1, 1], (0, 0))
+        cell9.random_generate_spheres(3, 3 * [0.1])
+        for sphere in cell9.spheres: spheres.append(sphere)
+
+        cells = [cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8, cell9]
+        return ArrayOfCells(2, bound, cells=[[cell1, cell2, cell3], [cell4, cell5, cell6],
+                                             [cell7, cell8, cell9]]), spheres, cells
 
     def test_all_spheres(self):
         arr, spheres, _ = TestArrayOfCells.construct_some_arr_cell()
@@ -261,35 +279,35 @@ class TestArrayOfCells(TestCase):
 
     def test_cushioning_array_for_boundary_cond(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries([2, 2], [BoundaryType.CYCLIC, BoundaryType.WALL])
+        arr.boundaries = CubeBoundaries([3, 3], [BoundaryType.CYCLIC, BoundaryType.WALL])
         cush_arr = arr.cushioning_array_for_boundary_cond()
         vec = np.array([1, 1])
         for cell in cush_arr.all_cells:
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
-        bound = CubeBoundaries([4, 4], arr.boundaries.boundaries_type)
+        bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
         draw = View2D('test_garb', bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_x_cyclic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries([2, 2], [BoundaryType.WALL, BoundaryType.CYCLIC])
+        arr.boundaries = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.CYCLIC])
         cush_arr = arr.cushioning_array_for_boundary_cond()
         vec = np.array([1, 1])
         for cell in cush_arr.all_cells:
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
-        bound = CubeBoundaries([4, 4], arr.boundaries.boundaries_type)
+        bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
         draw = View2D('test_garb', bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_y_cylic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries([2, 2], [BoundaryType.CYCLIC, BoundaryType.CYCLIC])
+        arr.boundaries = CubeBoundaries([3, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC])
         cush_arr = arr.cushioning_array_for_boundary_cond()
         vec = np.array([1, 1])
         for cell in cush_arr.all_cells:
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
-        bound = CubeBoundaries([4, 4], arr.boundaries.boundaries_type)
+        bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
         draw = View2D('test_garb', bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_both_cylic')
         return
