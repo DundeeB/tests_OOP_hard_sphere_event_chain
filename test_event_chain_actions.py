@@ -52,7 +52,7 @@ class TestStep(TestCase):
 class TestEvent2DCells(TestCase):
     @staticmethod
     def some_arr():
-        eff_arr = Event2DCells(1, 5, 5)
+        eff_arr = Event2DCells(1, 3, 3)
         r = 0.3
         eff_arr.add_third_dimension_for_sphere(2*r)
         eff_arr.random_generate_spheres(1, r)
@@ -66,13 +66,32 @@ class TestEvent2DCells(TestCase):
         return
 
     def test_closest_site_2d(self):
-        self.fail()
+        arr = TestEvent2DCells.some_arr()
+        sphere = Sphere((0.1, 1, 0.3), 0.3)
+        cite_ind = arr.closest_site_2d(sphere.center)
+        cell = arr.cell_from_ind(cite_ind)
+        self.assertEqual(cell.site, (0, 1))
 
     def test_relevant_cells_around_point_2d(self):
-        self.fail()
+        arr = TestEvent2DCells.some_arr()
+        p = (1.2, 1.5, 0.3)
+        rad = 0.3
+        rel_cells = arr.relevant_cells_around_point_2d(rad, p)
+        self.assertEqual(rel_cells, [arr.cells[1][1], arr.cells[1][0]])
 
     def test_get_all_crossed_points_2d(self):
-        self.fail()
+        arr = TestEvent2DCells.some_arr()
+        step = Step(Sphere((0.5, 0.5, 0.3), 0.3), 4, (1, 0, 0), arr.boundaries)
+        ts = arr.get_all_crossed_points_2d(step)
+        assert_list(self, ts, [0, 0.5, 1.5, 2.5, 3.5, 4])
+
+        step = Step(Sphere((0.5, 0.5, 0.3), 0.3), 4*np.sqrt(2), (1, 1, 0)/np.sqrt(2), arr.boundaries)
+        ts = arr.get_all_crossed_points_2d(step)
+        assert_list(self, ts, [0, 0.5, 1.5, 2.5, 3.5, 4]/np.sqrt(1/2))
+
+        step = Step(Sphere((0.5, 0.5, 0.3), 0.3), 4, (0, 1, 0), arr.boundaries)
+        ts = arr.get_all_crossed_points_2d(step)
+        assert_list(self, ts, [0, 0.5, 1.5, 2.5, 3.5, 4])
 
     def test_perform_total_step(self):
         self.fail()

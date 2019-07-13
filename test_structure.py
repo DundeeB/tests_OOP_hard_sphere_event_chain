@@ -248,6 +248,10 @@ class TestArrayOfCells(TestCase):
         cells = [cell1, cell2, cell3, cell4, cell5, cell6, cell7, cell8, cell9]
         return ArrayOfCells(2, bound, cells=[[cell1, cell2, cell3], [cell4, cell5, cell6],
                                              [cell7, cell8, cell9]]), spheres, cells
+    def test_draw_nominal_arr(self):
+        arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
+        draw = View2D('test_garb', arr.boundaries)
+        draw.array_of_cells_snapshot('Nominal', arr, 'Nominal')
 
     def test_all_spheres(self):
         arr, spheres, _ = TestArrayOfCells.construct_some_arr_cell()
@@ -320,6 +324,18 @@ class TestArrayOfCells(TestCase):
         draw.array_of_cells_snapshot('Test Random Generate spheres and legal configuration',
                                      arr, 'TestLegalConfiguration')
         return
+
+    def test_rows_different_columns(self):
+        arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
+        cells = [[[] for _ in range(len(arr.cells) - 1)] for _ in range(len(arr.cells[0]))]
+        for i in range(len(cells)):
+            for j in range(len(cells[i])):
+                cells[i][j] = arr.cells[i][j]
+        arr.cells = cells # cut a col
+        arr.boundaries = CubeBoundaries(arr.boundaries.edges + np.array([-1, 0]), arr.boundaries.boundaries_type)
+        draw = View2D('test_garb', arr.boundaries)
+        draw.array_of_cells_snapshot('Test rows differ columns',
+                                     arr, 'TestRowsDiffCol')
 
     def test_cell_from_ind(self):
         arr, _, cells = TestArrayOfCells.construct_some_arr_cell()
