@@ -3,7 +3,6 @@ from Structure import *
 from EventChainActions import Step
 import numpy as np
 from SnapShot import View2D
-epsilon = 1e-4
 
 
 def assert_list(self, vec1, vec2):
@@ -153,7 +152,7 @@ class TestMetric(TestCase):
         sphere = Sphere((0.5, 0.5), 0.1)
         v_hat = np.array([1, 1]) / np.sqrt(2)
         dist_to_hit, wall_to_hit = Metric.dist_to_boundary_without_r(sphere, 3, v_hat, bound)
-        self.assertAlmostEqual(dist_to_hit, 0.5 * np.sqrt(2) + epsilon)
+        self.assertAlmostEqual(dist_to_hit, 0.5 * np.sqrt(2), 5)
         self.assertEqual(wall_to_hit, bound.walls[2])
 
     def test_dist_to_collision(self):

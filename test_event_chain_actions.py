@@ -94,4 +94,9 @@ class TestEvent2DCells(TestCase):
         assert_list(self, ts, [0, 0.5, 1.5, 2.5, 3.5, 4])
 
     def test_perform_total_step(self):
-        self.fail()
+        for _ in range(200):
+            arr = TestEvent2DCells.some_arr()
+            cell = arr.all_cells[0]
+            sphere = arr.all_spheres[0]
+            arr.perform_total_step(cell, sphere, 7, (1, 1, 0))
+        pass
