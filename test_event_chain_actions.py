@@ -6,7 +6,7 @@ import os
 
 
 def assert_list(self, vec1, vec2):
-    for v1, v2 in zip(vec1, vec2): self.assertAlmostEqual(v1, v2)
+    for v1, v2 in zip(vec1, vec2): self.assertAlmostEqual(v1, v2, 5)
 
 
 class TestStep(TestCase):
@@ -94,20 +94,93 @@ class TestEvent2DCells(TestCase):
         ts = arr.get_all_crossed_points_2d(step)
         assert_list(self, ts, [0, 0.5, 1.5, 2.5, 3.5, 4])
 
-    def test_perform_total_step(self):
-        for i in range(1):
+    def test_cushion_l_x_not_l_y(self):
+        arr = Event2DCells(1, 1, 2)
+        arr.boundaries.boundaries_type = [BoundaryType.CYCLIC, BoundaryType.WALL]
+        r = 0.2
+        sphere1 = Sphere((0.5, 0.7), r)
+        sphere2 = Sphere((0.1, 0.5), r)
+        v_hat = (1, 0)
+        total_step = 2
+
+        arr.cells[0][0].add_spheres(sphere1)
+        arr.cells[0][0].add_spheres(sphere2)
+        output_dir = 'test_garb/2-spheres-cushion'
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        step = Step(sphere1, total_step, v_hat, arr.boundaries)
+        draw.array_of_cells_snapshot('Without Boundary', arr, 'Without_boundary', step)
+        cushioned = arr.cushioning_array_for_boundary_cond()
+        for cell in cushioned.all_cells:
+            cell.transform(cell.site + np.array([1, 0]))
+        draw.boundaries = CubeBoundaries([4, 1], 2*[BoundaryType.WALL])
+        draw.array_of_cells_snapshot('Cushioned', cushioned, 'cushion')
+
+    def test_simple_step_2_spheres(self):
+        arr = Event2DCells(1, 1, 2)
+        r = 0.2
+        sphere1 = Sphere((0.5, 0.5), r)
+        sphere2 = Sphere((1.5, 0.5), r)
+        v_hat = (1, 0)
+        total_step = 1.2
+        new_loc_1 = (1.1, 0.5)
+        new_loc_2 = (0.1, 0.5)
+
+        arr.cells[0][0].add_spheres(sphere1)
+        arr.cells[0][1].add_spheres(sphere2)
+        output_dir = 'test_garb/2-spheres'
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        step = Step(sphere1, total_step, v_hat, arr.boundaries)
+        arr.perform_total_step(arr.cells[0][0], step, draw)
+        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
+                                     arr, 'After_step', )
+        assert_list(self, sphere1.center, new_loc_1)
+        assert_list(self, sphere2.center, new_loc_2)
+
+    def test_collide_through_cyclic_boundary(self):
+        arr = Event2DCells(1, 1, 2)
+        r = 0.2
+        sphere1 = Sphere((0.5, 0.5), r)
+        sphere2 = Sphere((0.1, 0.5), r)
+        v_hat = (1, 0)
+        total_step = 2
+        new_loc_1 = (1.7, 0.5)
+        new_loc_2 = (0.9, 0.5)
+
+        arr.cells[0][0].add_spheres(sphere1)
+        arr.cells[0][0].add_spheres(sphere2)
+        output_dir = 'test_garb/2-spheres-cyclic'
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        step = Step(sphere1, total_step, v_hat, arr.boundaries)
+        arr.perform_total_step(arr.cells[0][0], step, draw)
+        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
+                                     arr, 'After_step', )
+        assert_list(self, sphere1.center, new_loc_1)
+        assert_list(self, sphere2.center, new_loc_2)
+
+    def test_generate_spheres_save_pic(self):
+        arr = TestEvent2DCells.some_arr()
+        cell = arr.all_cells[0]
+        sphere = arr.all_spheres[0]
+        v_hat = (1, 1, 0)/np.sqrt(2)
+        step = Step(sphere, 7, v_hat, arr.boundaries)
+
+        output_dir = 'test_garb/random_spheres'
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        arr.perform_total_step(cell, step, draw)
+        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
+                                     arr, 'After_step', step)
+        pass
+
+    def test_generate_spheres_many_times_perform_large_step(self):
+        for i in range(100):
             arr = TestEvent2DCells.some_arr()
             cell = arr.all_cells[0]
             sphere = arr.all_spheres[0]
             v_hat = (1, 1, 0)/np.sqrt(2)
             step = Step(sphere, 7, v_hat, arr.boundaries)
-
-            output_dir = 'test_garb/overlap_bug'
-            if not os.path.isdir(output_dir): os.mkdir(output_dir)
-            draw = View2D(output_dir, arr.boundaries)
-#            draw.array_of_cells_snapshot('Before Step (Searching overlap bug)',
-#                                         arr, str(i) + '_Before_step', step)
-            arr.perform_total_step(cell, step, draw)
-#            draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
-#                                         arr, str(i) + '_After_step', step)
+            arr.perform_total_step(cell, step)
         pass
