@@ -27,7 +27,7 @@ class TestSphere(TestCase):
         self.assertFalse(Sphere.overlap(sphere1, sphere2))
 
     def test_spheres_overlap(self):
-        spheres = [Sphere((x, 0), 1) for x in [0, 2, 4, 6]]
+        spheres = [Sphere((x, 0), 0.99) for x in [0, 2, 4, 6]]
         self.assertFalse(Sphere.spheres_overlap(spheres))
         spheres.append(Sphere((1, 0), 0.5))
         self.assertTrue(Sphere.spheres_overlap(spheres))
@@ -184,12 +184,12 @@ class TestCell(TestCase):
         cell.remove_sphere(sp)
         self.assertEqual(cell.spheres, other_spheres)
 
-    def test_should_sphere_be_in_cell(self):
+    def test_sphere_in_cell(self):
         cell = Cell((1, 1), [2, 2], (0, 0), [Sphere((0, 0, 0), 1), Sphere((3, 3, 3), 3)])
         sp = Sphere((0, 1, 2), 2)
-        self.assertFalse(cell.should_sphere_be_in_cell(sp))
+        self.assertFalse(cell.sphere_in_cell(sp))
         sp = Sphere((1.5, 1.5, 2), 2)
-        self.assertTrue(cell.should_sphere_be_in_cell(sp))
+        self.assertTrue(cell.sphere_in_cell(sp))
 
     def test_dim(self):
         cell = Cell((1, 1), [2, 2], (0, 0), [Sphere((0, 0, 0), 1), Sphere((3, 3, 3), 3)])
@@ -199,7 +199,7 @@ class TestCell(TestCase):
         cell = Cell((0, 0), [4, 4], (0, 0))
         cell.random_generate_spheres(3, 3*[0.5], extra_edges=[1])
         for sphere in cell.spheres:
-            self.assertTrue(cell.should_sphere_be_in_cell(sphere))
+            self.assertTrue(cell.sphere_in_cell(sphere))
             z = sphere.center[-1]
             self.assertTrue(z > 0 and z < 1)
 

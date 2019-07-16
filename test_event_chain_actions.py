@@ -2,6 +2,7 @@ from unittest import TestCase
 from EventChainActions import *
 from Structure import *
 from SnapShot import View2D
+import os
 
 
 def assert_list(self, vec1, vec2):
@@ -94,9 +95,19 @@ class TestEvent2DCells(TestCase):
         assert_list(self, ts, [0, 0.5, 1.5, 2.5, 3.5, 4])
 
     def test_perform_total_step(self):
-        for _ in range(200):
+        for i in range(1):
             arr = TestEvent2DCells.some_arr()
             cell = arr.all_cells[0]
             sphere = arr.all_spheres[0]
-            arr.perform_total_step(cell, sphere, 7, (1, 1, 0))
+            v_hat = (1, 1, 0)/np.sqrt(2)
+            step = Step(sphere, 7, v_hat, arr.boundaries)
+
+            output_dir = 'test_garb/overlap_bug'
+            if not os.path.isdir(output_dir): os.mkdir(output_dir)
+            draw = View2D(output_dir, arr.boundaries)
+#            draw.array_of_cells_snapshot('Before Step (Searching overlap bug)',
+#                                         arr, str(i) + '_Before_step', step)
+            arr.perform_total_step(cell, step, draw)
+#            draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
+#                                         arr, str(i) + '_After_step', step)
         pass
