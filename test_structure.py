@@ -191,7 +191,7 @@ class TestCell(TestCase):
     def test_add_spheres(self):
         cell = Cell((1, 1), [2, 2], (0, 0), [Sphere((0, 0, 0), 1), Sphere((3, 3, 3), 3)])
         sp = Sphere((0,1), 2)
-        cell.add_spheres(sp)
+        cell.append(sp)
         self.assertEqual(cell.spheres[-1], sp)
 
     def test_remove_sphere(self):
