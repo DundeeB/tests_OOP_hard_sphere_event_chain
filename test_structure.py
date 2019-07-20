@@ -1,6 +1,5 @@
 from unittest import TestCase
 from Structure import *
-from EventChainActions import Step
 import numpy as np
 from SnapShot import View2D
 
@@ -45,15 +44,28 @@ class TestSphere(TestCase):
         boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
         sphere = Sphere((0.5, 0.5), 0.3)
         v_hat = np.array((1, 1))/np.sqrt(2)
-        sphere.perform_step(Step(sphere, 9, v_hat, boundaries, 0.6*np.sqrt(2)))
+        sphere.perform_step(v_hat, 0.6*np.sqrt(2), boundaries)
         self.assertAlmostEqual(sphere.center[0], 0.1)
         self.assertAlmostEqual(sphere.center[1], 0.1)
 
     def test_systems_length_in_v_direction(self):
         boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
         sphere = Sphere((0.5, 0.5), 0.3)
-        v_hat = np.array((1, 1))/np.sqrt(2)
-        self.assertAlmostEqual(sphere.systems_length_in_v_direction(v_hat, boundaries), np.sqrt(2))
+        v_hat = (1, 1)/np.sqrt(2)
+        self.assertAlmostEqual(sphere.systems_length_in_v_direction(v_hat, boundaries), \
+                               np.sqrt(2))
+
+        boundaries = CubeBoundaries([2, 1], [BoundaryType.CYCLIC for _ in range(2)])
+        sphere = Sphere((0.5, 0.3), 0.3)
+        v_hat = (1, 1) / np.sqrt(2)
+        self.assertAlmostEqual(sphere.systems_length_in_v_direction(v_hat, boundaries), \
+                               np.sqrt(2))
+
+        boundaries = CubeBoundaries([1, 2], [BoundaryType.CYCLIC for _ in range(2)])
+        sphere = Sphere((0.5, 0.3), 0.3)
+        v_hat = (1, 1) / np.sqrt(2)
+        self.assertAlmostEqual(sphere.systems_length_in_v_direction(v_hat, boundaries), \
+                               0.8*np.sqrt(2))
 
     def test_trajectory(self):
         boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
@@ -64,16 +76,21 @@ class TestSphere(TestCase):
         self.assertAlmostEqual(new_loc[1], 0.5)
 
     def test_trajectories_braked_to_lines(self):
-        boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
+        boundaries = CubeBoundaries([1, 1], 2*[BoundaryType.CYCLIC])
         sphere = Sphere((0.5, 0.5), 0.3)
         v_hat = np.array((2, 1))/np.sqrt(5)
+        dt = np.sqrt(5)/4
         ps, ts = sphere.trajectories_braked_to_lines(1.2, v_hat, boundaries)
         self.assertAlmostEqual(np.linalg.norm(ps[0] - (0.5, 0.5)), 0)
         self.assertAlmostEqual(ts[0], 0)
         self.assertAlmostEqual(np.linalg.norm(ps[1] - (0, 0.75)), 0, 3)
-        self.assertAlmostEqual(ts[1], np.linalg.norm(np.array([1, 0.75]) - (0.5, 0.5)), 3)
-        self.assertAlmostEqual(np.linalg.norm(ps[2] - [0.57331263, 0.03665631]), 0, 3)
-        self.assertAlmostEqual(ts[2], 1.2)
+        self.assertAlmostEqual(ts[1], dt, 3)
+        self.assertAlmostEqual(np.linalg.norm(ps[2] - [0.5, 0]), 0, 3)
+        self.assertAlmostEqual(ts[2], 2*dt, 3)
+        fin = 1.2 - 2*dt
+        p_fin = (0.5, 0) + v_hat*fin
+        self.assertAlmostEqual(np.linalg.norm(ps[3] - p_fin), 0, 3)
+        self.assertAlmostEqual(ts[3], 1.2, 3)
 
 
 class TestCubeBoundaries(TestCase):
@@ -279,6 +296,11 @@ class TestArrayOfCells(TestCase):
                 draw = View2D('test_garb', bound)
                 draw.array_of_cells_snapshot('Test overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
+
+        cell = Cell((0, 0), [1, 1], (0, 0), [Sphere((0.1, 0.5), 0.2)])
+        neighbor = Cell((0, 1), [1, 1], (0, 0), [Sphere((0.1, 1.5), 0.2)])
+        arr = ArrayOfCells(2, CubeBoundaries([2, 1], 2*[BoundaryType.CYCLIC]), [cell, neighbor])
+        self.assertTrue(arr.overlap_2_cells(cell, neighbor))
 
     def test_cushioning_array_for_boundary_cond(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()

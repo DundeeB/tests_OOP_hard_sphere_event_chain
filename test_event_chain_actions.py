@@ -134,7 +134,8 @@ class TestEvent2DCells(TestCase):
         step = Step(sphere1, total_step, v_hat, arr.boundaries)
         arr.perform_total_step(arr.cells[0][0], step, draw)
         draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
-                                     arr, 'After_step', )
+                                     arr, 'After_step')
+        self.assertTrue(arr.legal_configuration())
         assert_list(self, sphere1.center, new_loc_1)
         assert_list(self, sphere2.center, new_loc_2)
 
@@ -160,6 +161,27 @@ class TestEvent2DCells(TestCase):
         assert_list(self, sphere1.center, new_loc_1)
         assert_list(self, sphere2.center, new_loc_2)
 
+    def test_collide_through_cyclic_boundary_3_spheres(self):
+        arr = Event2DCells(1, 3, 3)
+        r = 0.3
+        sphere1 = Sphere((0.99, 2.7), r)
+        sphere2 = Sphere((1.2, 0.4), r)
+        sphere3 = Sphere((1.8, 0.6), r)
+        v_hat = (1, 1)/np.sqrt(2)
+        total_step = 5
+
+        arr.cells[2][0].add_spheres(sphere1)
+        arr.cells[0][1].add_spheres(sphere2)
+        arr.cells[0][1].add_spheres(sphere3)
+        output_dir = 'test_garb/3-spheres-cyclic'
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        step = Step(sphere3, total_step, v_hat, arr.boundaries)
+        arr.perform_total_step(arr.cells[0][1], step, draw)
+        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
+                                     arr, 'After_step', )
+        self.assertTrue(arr.legal_configuration())
+
     def test_generate_spheres_save_pic(self):
         arr = TestEvent2DCells.some_arr()
         cell = arr.all_cells[0]
@@ -173,7 +195,7 @@ class TestEvent2DCells(TestCase):
         arr.perform_total_step(cell, step, draw)
         draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
                                      arr, 'After_step', step)
-        pass
+        self.assertTrue(arr.legal_configuration())
 
     def test_generate_spheres_many_times_perform_large_step(self):
         for i in range(100):
