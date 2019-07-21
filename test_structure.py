@@ -151,7 +151,8 @@ class TestCubeBoundaries(TestCase):
         boundaries = CubeBoundaries([20, 20], [BoundaryType.CYCLIC for _ in range(2)])
         sphere1 = Sphere((19, 5), 2.0)
         sphere2 = Sphere((4, 5), 2.0)
-        self.assertAlmostEqual(boundaries.sphere_dist(sphere1, sphere2), 5.0)
+        dist, _ = boundaries.sphere_dist(sphere1, sphere2)
+        self.assertAlmostEqual(dist, 5.0)
         self.assertAlmostEqual(sphere1.sphere_dist(sphere2), 15)
 
 
@@ -175,14 +176,15 @@ class TestMetric(TestCase):
     def test_dist_to_collision(self):
         sphere1 = Sphere((0.5, 1), 0.3)
         sphere2 = Sphere((0.5, 2), 0.3)
-        diam  = sphere1.rad + sphere2.rad
+        diam = sphere1.rad + sphere2.rad
         v_hat = np.array((0, 1))
-        bound = CubeBoundaries([3, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC])
+        bound = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.WALL])
         d1 = Metric.dist_to_collision(sphere1, sphere2, 10, v_hat, bound)
         self.assertAlmostEqual(d1, 1-diam)
         d1 = Metric.dist_to_collision(sphere1, sphere2, 0.1, v_hat, bound)
         self.assertEqual(d1, float('inf'))
 
+        bound = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.CYCLIC])
         d1 = Metric.dist_to_collision(sphere1, sphere2, 10, -v_hat, bound)
         self.assertEqual(d1, 2-diam)
 

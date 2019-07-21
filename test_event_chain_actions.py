@@ -2,7 +2,7 @@ from unittest import TestCase
 from EventChainActions import *
 from Structure import *
 from SnapShot import View2D
-import os, shutil
+import os, shutil, random
 
 garb = 'test_garb'
 shutil.rmtree(garb)
@@ -62,6 +62,28 @@ class TestEvent2DCells(TestCase):
         eff_arr.add_third_dimension_for_sphere(2*r)
         eff_arr.random_generate_spheres(1, r)
         return eff_arr
+
+    def three_spheres_test(self, sphere1, sphere2, sphere3, output_dir, total_step=7):
+        arr = Event2DCells(1, 3, 3)
+        sphere = sphere1
+        for s in [sphere1, sphere2, sphere3]:
+            for i in [0, 1, 2]:
+                for j in [0, 1, 2]:
+                    if arr.cells[i][j].sphere_in_cell(s):
+                        arr.cells[i][j].append(s)
+                        if s == sphere1:
+                            cell = arr.cells[i][j]
+
+        v_hat = (1, 1) / np.sqrt(2)
+        step = Step(sphere, total_step, v_hat, arr.boundaries)
+
+        self.assertTrue(arr.legal_configuration())
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        arr.perform_total_step(cell, step, draw)
+        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
+                                     arr, 'After_step', step)
+        self.assertTrue(arr.legal_configuration())
 
     def test_init(self):
         arr = TestEvent2DCells.some_arr()
@@ -165,73 +187,37 @@ class TestEvent2DCells(TestCase):
         assert_list(self, sphere2.center, new_loc_2)
 
     def test_collide_through_cyclic_boundary_3_spheres(self):
-        arr = Event2DCells(1, 3, 3)
         r = 0.3
         sphere1 = Sphere((0.99, 2.7), r)
         sphere2 = Sphere((1.2, 0.4), r)
         sphere3 = Sphere((1.8, 0.6), r)
-        v_hat = (1, 1)/np.sqrt(2)
-        total_step = 5
-
-        arr.cells[2][0].append(sphere1)
-        arr.cells[0][1].append(sphere2)
-        arr.cells[0][1].append(sphere3)
         output_dir = garb + '/3-spheres-cyclic'
-        if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
-        step = Step(sphere3, total_step, v_hat, arr.boundaries)
-        arr.perform_total_step(arr.cells[0][1], step, draw)
-        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
-                                     arr, 'After_step', )
-        self.assertTrue(arr.legal_configuration())
+        self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_generate_spheres_save_pic(self):
-        arr = Event2DCells(1, 3, 3)
         sphere1 = Sphere((1.1, 0.5), 0.3)
         sphere2 = Sphere((2.01, 0.8), 0.3)
         sphere3 = Sphere((2.2, 1.75), 0.3)
-        arr.cells[0][1].append(sphere1)
-        arr.cells[0][2].append(sphere2)
-        arr.cells[1][2].append(sphere3)
-
-        v_hat = (1, 1) / np.sqrt(2)
-        sphere = sphere1
-        cell = arr.cells[0][1]
-        step = Step(sphere, 7, v_hat, arr.boundaries)
-
-        self.assertTrue(arr.legal_configuration())
         output_dir = garb + '/random_spheres'
-        if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
-        arr.perform_total_step(cell, step, draw)
-        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
-                                     arr, 'After_step', step)
-        self.assertTrue(arr.legal_configuration())
+        self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_around_ps_should_be_center_off_sphere(self):
-        arr = Event2DCells(1, 3, 3)
         sphere1 = Sphere((1.4, 2.01), 0.3)
         sphere2 = Sphere((2.01, 1.99), 0.3)
-        arr.cells[2][1].append(sphere1)
-        arr.cells[1][2].append(sphere2)
-
-        v_hat = (1, 1) / np.sqrt(2)
-        sphere = sphere1
-        cell = arr.cells[2][1]
-        total_step = 0.3*np.sqrt(2)
-
-        step = Step(sphere, total_step, v_hat, arr.boundaries)
-        self.assertTrue(arr.legal_configuration())
+        sphere3 = Sphere((2.5, 2.5), 0.3)
         output_dir = garb + '/ps_should_be_center_off_sphere'
-        if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
-        arr.perform_total_step(cell, step, draw)
-        draw.array_of_cells_snapshot('After Step (Searching overlap bug)',
-                                     arr, 'After_step', step)
-        self.assertTrue(arr.legal_configuration())
+        total_step = 0.3 * np.sqrt(2)
+        self.three_spheres_test(sphere1, sphere2, sphere3, output_dir, total_step)
+
+    def test_up_boundary_left(self):
+        sphere1 = Sphere((0.05, 0.8), 0.3)
+        sphere2 = Sphere((1.05, 1.55), 0.3)
+        sphere3 = Sphere((2.99, 1.4), 0.3)
+        output_dir = garb + '/up_boundary_left'
+        self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_generate_spheres_many_times_perform_large_step(self):
-        for i in range(1000):
+        for i in range(100):
             arr = TestEvent2DCells.some_arr()
             cell = arr.all_cells[0]
             sphere = arr.all_spheres[0]
@@ -251,4 +237,36 @@ class TestEvent2DCells(TestCase):
                 step = Step(sphere, 7, v_hat, arr.boundaries)
                 cell = temp_arr.all_cells[0]
                 temp_arr.perform_total_step(cell, step, draw)
+                raise
+        pass
+
+    def test_spheres_do_many_steps(self):
+        arr = TestEvent2DCells.some_arr()
+        for i in range(10):
+            i_cell = None
+            while True:
+                i_cell = random.randint(0, len(arr.all_cells) - 1)
+                cell = arr.all_cells[i_cell]
+                if len(cell.spheres) > 0:
+                    break
+            i_sphere = random.randint(0, len(cell.spheres) - 1)
+            sphere = cell.spheres[i_sphere]
+            v_hat = (1, 1, 0)/np.sqrt(2)
+            step = Step(sphere, 7, v_hat, arr.boundaries)
+            temp_arr = copy.deepcopy(arr)
+            try:
+                arr.perform_total_step(cell, step)
+                assert arr.legal_configuration()
+            except:
+                assert temp_arr.legal_configuration()
+                output_dir = garb + '/many_steps'
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir)
+                os.mkdir(output_dir)
+                draw = View2D(output_dir, arr.boundaries)
+                cell = temp_arr.all_cells[i_cell]
+                sphere = cell.spheres[i_sphere]
+                step = Step(sphere, 7, v_hat, arr.boundaries)
+                temp_arr.perform_total_step(cell, step, draw)
+                raise
         pass
