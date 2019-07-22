@@ -1,7 +1,10 @@
 from unittest import TestCase
 from Structure import *
-import numpy as np
+import os, numpy as np
 from SnapShot import View2D
+
+output_dir = 'test_garb'
+if not os.path.isdir(output_dir): os.mkdir(output_dir)
 
 
 def assert_list(self, vec1, vec2):
@@ -20,16 +23,16 @@ class TestSphere(TestCase):
     def test_overlap(self):
         sphere1 = Sphere((0, 0), 0.26)
         sphere2 = Sphere((0, 0.5), 0.25)
-        self.assertTrue(Sphere.overlap(sphere1, sphere2))
+        self.assertTrue(Sphere.direct_overlap(sphere1, sphere2))
         sphere1 = Sphere((0, 0), 0.1)
         sphere2 = Sphere((0, 0.5), 0.1)
-        self.assertFalse(Sphere.overlap(sphere1, sphere2))
+        self.assertFalse(Sphere.direct_overlap(sphere1, sphere2))
 
     def test_spheres_overlap(self):
         spheres = [Sphere((x, 0), 0.99) for x in [0, 2, 4, 6]]
-        self.assertFalse(Sphere.spheres_overlap(spheres))
+        self.assertFalse(Sphere.direct_spheres_overlap(spheres))
         spheres.append(Sphere((1, 0), 0.5))
-        self.assertTrue(Sphere.spheres_overlap(spheres))
+        self.assertTrue(Sphere.direct_spheres_overlap(spheres))
 
     def test_box_it(self):
         boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
@@ -147,14 +150,6 @@ class TestCubeBoundaries(TestCase):
 
         # TBD implement test for 3d
 
-    def test_sphere_dist(self):
-        boundaries = CubeBoundaries([20, 20], [BoundaryType.CYCLIC for _ in range(2)])
-        sphere1 = Sphere((19, 5), 2.0)
-        sphere2 = Sphere((4, 5), 2.0)
-        dist, _ = boundaries.sphere_dist(sphere1, sphere2)
-        self.assertAlmostEqual(dist, 5.0)
-        self.assertAlmostEqual(sphere1.sphere_dist(sphere2), 15)
-
 
 class TestMetric(TestCase):
     def test_dist_to_boundary(self):
@@ -186,7 +181,7 @@ class TestMetric(TestCase):
 
         bound = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.CYCLIC])
         d1 = Metric.dist_to_collision(sphere1, sphere2, 10, -v_hat, bound)
-        self.assertEqual(d1, 2-diam)
+        self.assertAlmostEqual(d1, 2-diam,5)
 
 
 class TestCell(TestCase):
@@ -296,7 +291,7 @@ class TestArrayOfCells(TestCase):
             arr = ArrayOfCells(2, bound, [[cell1], [cell2]])
             if not arr.overlap_2_cells(cell1, cell2):
                 draw = View2D('test_garb', bound)
-                draw.array_of_cells_snapshot('Test overlap 2 cells', arr, 'Test_overlap_2_cells')
+                draw.array_of_cells_snapshot('Test direct_overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
 
         cell = Cell((0, 0), [1, 1], (0, 0), [Sphere((0.1, 0.5), 0.2)])
