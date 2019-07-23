@@ -230,6 +230,41 @@ class TestEvent2DCells(TestCase):
         output_dir = garb + '/large_to_up_right'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
+    def test_free_step_over_lap(self):
+        sphere1 = Sphere((2.1, 0.9), 0.3)
+        sphere2 = Sphere((0.8, 0.5), 0.3)
+        output_dir = garb + '/free_step_over_lap'
+        arr = Event2DCells(1, 5, 5)
+        for s in [sphere1, sphere2]:
+            for i in range(len(arr.cells)):
+                for j in range(len(arr.cells[i])):
+                    if arr.cells[i][j].sphere_in_cell(s):
+                        arr.cells[i][j].append(s)
+                        if s == sphere1:
+                            cell = arr.cells[i][j]
+        final_pos = np.array([1.05, 0.5])
+        vec = final_pos - sphere1.center
+        total_step = np.linalg.norm(vec)
+        v_hat = vec / total_step
+        step = Step(sphere1, total_step, v_hat, arr.boundaries)
+
+        self.assertTrue(arr.legal_configuration())
+        if not os.path.isdir(output_dir): os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        arr.perform_total_step(cell, step, draw)
+        draw.array_of_cells_snapshot('After Step (Searching direct_overlap bug)',
+                                     arr, 'After_step', step)
+        self.assertTrue(arr.legal_configuration())
+
+    def test_generate_spheres_in_cubic_structure(self):
+        arr = Event2DCells(0.6, 10, 10)
+        arr.generate_spheres_in_cubic_structure(1, 0.3)
+        output_dir = garb
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        draw.array_of_cells_snapshot('cubic structure', arr, 'cubic_struct')
+
     def test_generate_spheres_many_times_perform_large_step(self):
         for i in range(100):
             arr = TestEvent2DCells.some_arr()
@@ -285,15 +320,25 @@ class TestEvent2DCells(TestCase):
                 raise
         pass
 
-    def test_big_sim(self):
-        arr = Event2DCells(1, 5, 5)
-        arr.random_generate_spheres(2, 0.2)
-        output_dir = garb + '/big_sim'
+    def test_cubic_comb_transition(self):
+        n_row = 25
+        n_col = n_row
+        n_per_cell = 1
+        rad = 0.48  # eta=0.72 > 0.7 so should be solid
+        N = n_per_cell * n_row * n_col
+        print('Number of disks: ' + str(N))
+        print('eta= ' + str(n_per_cell * np.pi * rad ** 2))
+
+        arr = Event2DCells(1, n_row, n_col)
+        arr.generate_spheres_in_cubic_structure(n_per_cell, rad)
+        total_step = 2
+        output_dir = garb + '/cubic_comb_transition'
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.mkdir(output_dir)
         draw = View2D(output_dir, arr.boundaries)
-        for i in range(20):
+        draw.array_of_cells_snapshot('Before run', arr, '0')
+        for i in range(1000):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -301,11 +346,93 @@ class TestEvent2DCells(TestCase):
                     break
             i_sphere = random.randint(0, len(cell.spheres) - 1)
             sphere = cell.spheres[i_sphere]
-            v_hat = np.random.random(2)
-            v_hat = v_hat/np.linalg.norm(v_hat)
-            step = Step(sphere, 3, v_hat, arr.boundaries)
-            arr.perform_total_step(cell, step)
-            draw.array_of_cells_snapshot(str(i),
-                                         arr, str(i), step)
-            draw.save_video("video", fps=0.2)
+            # v_hat = [-1, -1] + 2*np.random.random(2)
+            # v_hat = v_hat/np.linalg.norm(v_hat)
+            if i%2:
+                v_hat = [1, 0]
+            else:
+                v_hat = [0, 1]
+            v_hat = np.array(v_hat)
+            step = Step(sphere, total_step, v_hat, arr.boundaries)
+            temp_arr = copy.deepcopy(arr)
+            try:
+                if i % 5 == 4:
+                    draw.array_of_cells_snapshot(str(i + 1),
+                                                 arr, str(i + 1).zfill(int(np.floor(np.log10(200)) + 1)))
+                arr.perform_total_step(cell, step)
+            except:
+                draw.array_of_cells_snapshot('Most recent image',
+                                             arr, 'Most_recent_img', step)
+                assert temp_arr.legal_configuration()
+                output_dir += '/Bug!'
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir)
+                os.mkdir(output_dir)
+                draw.output_dir = output_dir
+                cell = temp_arr.all_cells[i_cell]
+                sphere = cell.spheres[i_sphere]
+                step = Step(sphere, total_step, v_hat, arr.boundaries)
+                draw.counter = 0
+                temp_arr.perform_total_step(cell, step, draw)
+                raise
+        draw.save_video("cubic_comb_transition", fps=6)
+        pass
+
+    def test_cubic_comb_2_species_transition(self):
+        n_row = 7
+        n_col = n_row
+        n_per_cell = 5
+        r1 = 0.35
+        r2 = 0.15
+        rads = [r1] + (n_per_cell - 1)*[r2]
+        N = n_per_cell * n_row * n_col
+        print('Number of disks: ' + str(N))
+        print('eta= ' + str(np.pi * r1 ** 2 + (n_per_cell-1) * np.pi * r2 ** 2))
+
+        arr = Event2DCells(1, n_row, n_col)
+        arr.generate_spheres_in_cubic_structure(n_per_cell, rads)
+        total_step = 2
+        output_dir = garb + '/cubic_comb_2_species_transition'
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        draw = View2D(output_dir, arr.boundaries)
+        draw.array_of_cells_snapshot('Before run', arr, '0')
+        for i in range(200):
+            while True:
+                i_cell = random.randint(0, len(arr.all_cells) - 1)
+                cell = arr.all_cells[i_cell]
+                if len(cell.spheres) > 0:
+                    break
+            i_sphere = random.randint(0, len(cell.spheres) - 1)
+            sphere = cell.spheres[i_sphere]
+            # v_hat = [-1, -1] + 2*np.random.random(2)
+            # v_hat = v_hat/np.linalg.norm(v_hat)
+            if i%2:
+                v_hat = [1, 0]
+            else:
+                v_hat = [0, 1]
+            v_hat = np.array(v_hat)
+            step = Step(sphere, total_step, v_hat, arr.boundaries)
+            temp_arr = copy.deepcopy(arr)
+            try:
+                draw.array_of_cells_snapshot(str(i + 1),
+                                             arr, str(i + 1).zfill(int(np.floor(np.log10(200)) + 1)))
+                arr.perform_total_step(cell, step)
+            except:
+                draw.array_of_cells_snapshot('Most recent image',
+                                             arr, 'Most_recent_img', step)
+                assert temp_arr.legal_configuration()
+                output_dir += '/Bug!'
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir)
+                os.mkdir(output_dir)
+                draw.output_dir = output_dir
+                cell = temp_arr.all_cells[i_cell]
+                sphere = cell.spheres[i_sphere]
+                step = Step(sphere, total_step, v_hat, arr.boundaries)
+                draw.counter = 0
+                temp_arr.perform_total_step(cell, step, draw)
+                raise
+        draw.save_video("cubic_comb_2_species_transition", fps=6)
         pass
