@@ -5,7 +5,8 @@ from SnapShot import View2D
 import os, shutil, random
 
 garb = 'test_garb'
-shutil.rmtree(garb)
+if os.path.exists(garb):
+    shutil.rmtree(garb)
 os.mkdir(garb)
 
 
@@ -320,8 +321,41 @@ class TestEvent2DCells(TestCase):
                 raise
         pass
 
+    def test_steps_in_random_directions(self):
+        arr = Event2DCells(1, 6, 5)
+        arr.generate_spheres_in_cubic_structure(2, 0.2)
+        for i in range(10):
+            i_cell = None
+            while True:
+                i_cell = random.randint(0, len(arr.all_cells) - 1)
+                cell = arr.all_cells[i_cell]
+                if len(cell.spheres) > 0:
+                    break
+            i_sphere = random.randint(0, len(cell.spheres) - 1)
+            sphere = cell.spheres[i_sphere]
+            t = random.random()
+            v_hat = (np.cos(t), np.sin(t))
+            step = Step(sphere, 7, v_hat, arr.boundaries)
+            temp_arr = copy.deepcopy(arr)
+            try:
+                arr.perform_total_step(cell, step)
+                assert arr.legal_configuration()
+            except:
+                assert temp_arr.legal_configuration()
+                output_dir = garb + '/steps_in_random_directions'
+                if os.path.exists(output_dir):
+                    shutil.rmtree(output_dir)
+                os.mkdir(output_dir)
+                draw = View2D(output_dir, arr.boundaries)
+                cell = temp_arr.all_cells[i_cell]
+                sphere = cell.spheres[i_sphere]
+                step = Step(sphere, 7, v_hat, arr.boundaries)
+                temp_arr.perform_total_step(cell, step, draw)
+                raise
+        pass
+
     def test_cubic_comb_transition(self):
-        n_row = 25
+        n_row = 4
         n_col = n_row
         n_per_cell = 1
         rad = 0.48  # eta=0.72 > 0.7 so should be solid
@@ -331,14 +365,14 @@ class TestEvent2DCells(TestCase):
 
         arr = Event2DCells(1, n_row, n_col)
         arr.generate_spheres_in_cubic_structure(n_per_cell, rad)
-        total_step = 2
+        total_step = np.sqrt(n_row)
         output_dir = garb + '/cubic_comb_transition'
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.mkdir(output_dir)
         draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
-        for i in range(1000):
+        for i in range(n_row**2):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -356,7 +390,7 @@ class TestEvent2DCells(TestCase):
             step = Step(sphere, total_step, v_hat, arr.boundaries)
             temp_arr = copy.deepcopy(arr)
             try:
-                if i % 5 == 4:
+                if i == 0 or i==1000:  # i % 5 == 4:
                     draw.array_of_cells_snapshot(str(i + 1),
                                                  arr, str(i + 1).zfill(int(np.floor(np.log10(200)) + 1)))
                 arr.perform_total_step(cell, step)
@@ -379,7 +413,7 @@ class TestEvent2DCells(TestCase):
         pass
 
     def test_cubic_comb_2_species_transition(self):
-        n_row = 7
+        n_row = 3
         n_col = n_row
         n_per_cell = 5
         r1 = 0.35
@@ -398,7 +432,7 @@ class TestEvent2DCells(TestCase):
         os.mkdir(output_dir)
         draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
-        for i in range(200):
+        for i in range(N):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -436,3 +470,48 @@ class TestEvent2DCells(TestCase):
                 raise
         draw.save_video("cubic_comb_2_species_transition", fps=6)
         pass
+
+    def test_3d_1_sphere(self):
+        r = 0.1
+        arr = Event2DCells(1, 1, 1)
+        arr.add_third_dimension_for_sphere(2)
+        total_step = 0.5*np.sqrt(2)
+        output_dir = garb + '/3d_1_sphere'
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        cell = arr.all_cells[0]
+        sphere = Sphere((0, 0, 0.15), r)
+        cell.append(sphere)
+        v_hat = np.array([0, 1, 1])/np.sqrt(2)
+        step = Step(sphere, total_step, v_hat, arr.boundaries)
+        temp_arr = copy.deepcopy(arr)
+        arr.perform_total_step(cell, step)
+        assert temp_arr.legal_configuration()
+        assert_list(self, sphere.center, (0, 0.5, 0.65))
+
+    def test_3d_2_sphere(self):
+        r = 0.1 * np.sqrt(2)
+        arr = Event2DCells(2, 1, 1)
+        arr.add_third_dimension_for_sphere(0.9 + r)
+        total_step = (0.1 + 0.4 + 0.1) * np.sqrt(2)
+        output_dir = garb + '/3d_1_sphere'
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        cell = arr.all_cells[0]
+        x1 = 0.2
+        sphere = Sphere((0, x1, x1), r)
+        x2 = 0.5
+        sphere2 = Sphere((0, x2, x2), r)
+        cell.append([sphere, sphere2])
+
+        assert arr.legal_configuration()
+
+        v_hat = np.array([0, 1, 1])/np.sqrt(2)
+        step = Step(sphere, total_step, v_hat, arr.boundaries)
+        arr.perform_total_step(cell, step)
+        assert arr.legal_configuration()
+        assert_list(self, sphere.center, (0, x1 + 0.1, x1 + 0.1))
+        x_wall = 1 - 0.1*np.sqrt(2)
+        assert_list(self, sphere2.center, (0, 1, 0.8))
