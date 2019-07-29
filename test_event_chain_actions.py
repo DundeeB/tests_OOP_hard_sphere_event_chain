@@ -86,6 +86,19 @@ class TestEvent2DCells(TestCase):
                                      arr, 'After_step', step)
         self.assertTrue(arr.legal_configuration())
 
+    @staticmethod
+    def track_step(arr_before, output_dir, i_cell, i_sphere, v_hat, total_step=7):
+        assert arr_before.legal_configuration()
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        draw = View2D(output_dir, arr_before.boundaries)
+        cell = arr_before.all_cells[i_cell]
+        sphere = cell.spheres[i_sphere]
+        step = Step(sphere, 7, v_hat, arr_before.boundaries)
+        arr_before.perform_total_step(cell, step, draw)
+        raise
+
     def test_init(self):
         arr = TestEvent2DCells.some_arr()
         draw = View2D(garb, arr.boundaries)
@@ -231,6 +244,13 @@ class TestEvent2DCells(TestCase):
         output_dir = garb + '/large_to_up_right'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
+    def test_on_boundaries(self):
+        sphere1 = Sphere((0.10, 1.05), 0.3)
+        sphere2 = Sphere((1.80, 2.95), 0.3)
+        sphere3 = Sphere((2.00, 0.60), 0.3)
+        output_dir = garb + '/on_boundaries'
+        self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
+
     def test_free_step_over_lap(self):
         sphere1 = Sphere((2.1, 0.9), 0.3)
         sphere2 = Sphere((0.8, 0.5), 0.3)
@@ -277,23 +297,14 @@ class TestEvent2DCells(TestCase):
             try:
                 arr.perform_total_step(cell, step)
             except:
-                assert temp_arr.legal_configuration()
                 output_dir = garb + '/many_random_spheres'
-                if os.path.exists(output_dir):
-                    shutil.rmtree(output_dir)
-                os.mkdir(output_dir)
-                draw = View2D(output_dir, arr.boundaries)
-                sphere = temp_arr.all_spheres[0]
-                step = Step(sphere, 7, v_hat, arr.boundaries)
-                cell = temp_arr.all_cells[0]
-                temp_arr.perform_total_step(cell, step, draw)
+                TestEvent2DCells.track_step(temp_arr, output_dir, 0, 0, v_hat)
                 raise
         pass
 
     def test_spheres_do_many_steps(self):
         arr = TestEvent2DCells.some_arr()
         for i in range(10):
-            i_cell = None
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -308,24 +319,15 @@ class TestEvent2DCells(TestCase):
                 arr.perform_total_step(cell, step)
                 assert arr.legal_configuration()
             except:
-                assert temp_arr.legal_configuration()
                 output_dir = garb + '/many_steps'
-                if os.path.exists(output_dir):
-                    shutil.rmtree(output_dir)
-                os.mkdir(output_dir)
-                draw = View2D(output_dir, arr.boundaries)
-                cell = temp_arr.all_cells[i_cell]
-                sphere = cell.spheres[i_sphere]
-                step = Step(sphere, 7, v_hat, arr.boundaries)
-                temp_arr.perform_total_step(cell, step, draw)
+                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat)
                 raise
         pass
 
     def test_steps_in_random_directions(self):
         arr = Event2DCells(1, 6, 5)
         arr.generate_spheres_in_cubic_structure(2, 0.2)
-        for i in range(10):
-            i_cell = None
+        for i in range(50):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -341,16 +343,8 @@ class TestEvent2DCells(TestCase):
                 arr.perform_total_step(cell, step)
                 assert arr.legal_configuration()
             except:
-                assert temp_arr.legal_configuration()
                 output_dir = garb + '/steps_in_random_directions'
-                if os.path.exists(output_dir):
-                    shutil.rmtree(output_dir)
-                os.mkdir(output_dir)
-                draw = View2D(output_dir, arr.boundaries)
-                cell = temp_arr.all_cells[i_cell]
-                sphere = cell.spheres[i_sphere]
-                step = Step(sphere, 7, v_hat, arr.boundaries)
-                temp_arr.perform_total_step(cell, step, draw)
+                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat)
                 raise
         pass
 
@@ -397,17 +391,8 @@ class TestEvent2DCells(TestCase):
             except:
                 draw.array_of_cells_snapshot('Most recent image',
                                              arr, 'Most_recent_img', step)
-                assert temp_arr.legal_configuration()
                 output_dir += '/Bug!'
-                if os.path.exists(output_dir):
-                    shutil.rmtree(output_dir)
-                os.mkdir(output_dir)
-                draw.output_dir = output_dir
-                cell = temp_arr.all_cells[i_cell]
-                sphere = cell.spheres[i_sphere]
-                step = Step(sphere, total_step, v_hat, arr.boundaries)
-                draw.counter = 0
-                temp_arr.perform_total_step(cell, step, draw)
+                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat)
                 raise
         draw.save_video("cubic_comb_transition", fps=6)
         pass
@@ -440,9 +425,7 @@ class TestEvent2DCells(TestCase):
                     break
             i_sphere = random.randint(0, len(cell.spheres) - 1)
             sphere = cell.spheres[i_sphere]
-            # v_hat = [-1, -1] + 2*np.random.random(2)
-            # v_hat = v_hat/np.linalg.norm(v_hat)
-            if i%2:
+            if i % 2:
                 v_hat = [1, 0]
             else:
                 v_hat = [0, 1]
@@ -456,17 +439,8 @@ class TestEvent2DCells(TestCase):
             except:
                 draw.array_of_cells_snapshot('Most recent image',
                                              arr, 'Most_recent_img', step)
-                assert temp_arr.legal_configuration()
                 output_dir += '/Bug!'
-                if os.path.exists(output_dir):
-                    shutil.rmtree(output_dir)
-                os.mkdir(output_dir)
-                draw.output_dir = output_dir
-                cell = temp_arr.all_cells[i_cell]
-                sphere = cell.spheres[i_sphere]
-                step = Step(sphere, total_step, v_hat, arr.boundaries)
-                draw.counter = 0
-                temp_arr.perform_total_step(cell, step, draw)
+                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat, total_step)
                 raise
         draw.save_video("cubic_comb_2_species_transition", fps=6)
         pass
@@ -513,5 +487,4 @@ class TestEvent2DCells(TestCase):
         arr.perform_total_step(cell, step)
         assert arr.legal_configuration()
         assert_list(self, sphere.center, (0, x1 + 0.1, x1 + 0.1))
-        x_wall = 1 - 0.1*np.sqrt(2)
         assert_list(self, sphere2.center, (0, 1, 0.8))
