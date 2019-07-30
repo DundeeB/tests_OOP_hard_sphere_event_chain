@@ -67,11 +67,14 @@ class TestEvent2DCells(TestCase):
     def three_spheres_test(self, sphere1, sphere2, sphere3, output_dir, total_step=7):
         arr = Event2DCells(1, 3, 3)
         sphere = sphere1
-        for s in [sphere1, sphere2, sphere3]:
+        spheres = [sphere1, sphere2, sphere3]
+        spheres_added = []
+        for s in spheres:
             for i in [0, 1, 2]:
                 for j in [0, 1, 2]:
-                    if arr.cells[i][j].sphere_in_cell(s):
+                    if arr.cells[i][j].sphere_in_cell(s) and s not in spheres_added:
                         arr.cells[i][j].append(s)
+                        spheres_added.append(s)
                         if s == sphere1:
                             cell = arr.cells[i][j]
 
@@ -85,7 +88,6 @@ class TestEvent2DCells(TestCase):
         draw.array_of_cells_snapshot('After Step (Searching direct_overlap bug)',
                                      arr, 'After_step', step)
         self.assertTrue(arr.legal_configuration())
-
     @staticmethod
     def track_step(arr_before, output_dir, i_cell, i_sphere, v_hat, total_step=7):
         assert arr_before.legal_configuration()
@@ -209,9 +211,9 @@ class TestEvent2DCells(TestCase):
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_generate_spheres_save_pic(self):
-        sphere1 = Sphere((1.1, 0.5), 0.3)
-        sphere2 = Sphere((2.01, 0.8), 0.3)
-        sphere3 = Sphere((2.2, 1.75), 0.3)
+        sphere1 = Sphere((1.10, 0.50), 0.3)
+        sphere2 = Sphere((2.01, 0.80), 0.3)
+        sphere3 = Sphere((2.20, 1.75), 0.3)
         output_dir = garb + '/random_spheres'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
@@ -349,7 +351,7 @@ class TestEvent2DCells(TestCase):
         pass
 
     def test_cubic_comb_transition(self):
-        n_row = 4
+        n_row = 40
         n_col = n_row
         n_per_cell = 1
         rad = 0.48  # eta=0.72 > 0.7 so should be solid
@@ -366,7 +368,7 @@ class TestEvent2DCells(TestCase):
         os.mkdir(output_dir)
         draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
-        for i in range(n_row**2):
+        for i in range(2*n_row**2):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -384,7 +386,7 @@ class TestEvent2DCells(TestCase):
             step = Step(sphere, total_step, v_hat, arr.boundaries)
             temp_arr = copy.deepcopy(arr)
             try:
-                if i == 0 or i==1000:  # i % 5 == 4:
+                if i % 5 == 4:  # i == 0 or i==1000:  #
                     draw.array_of_cells_snapshot(str(i + 1),
                                                  arr, str(i + 1).zfill(int(np.floor(np.log10(200)) + 1)))
                 arr.perform_total_step(cell, step)
