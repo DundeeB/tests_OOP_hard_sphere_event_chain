@@ -368,7 +368,8 @@ class TestEvent2DCells(TestCase):
         os.mkdir(output_dir)
         draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
-        for i in range(2*n_row**2):
+        N_iteration = 2*n_row**2
+        for i in range(N_iteration):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
                 cell = arr.all_cells[i_cell]
@@ -379,18 +380,19 @@ class TestEvent2DCells(TestCase):
             # v_hat = [-1, -1] + 2*np.random.random(2)
             # v_hat = v_hat/np.linalg.norm(v_hat)
             if i%2:
-                v_hat = [1, 0]
+                v_hat = (1, 0)
             else:
-                v_hat = [0, 1]
+                v_hat = (0, 1)
             v_hat = np.array(v_hat)
             step = Step(sphere, total_step, v_hat, arr.boundaries)
             temp_arr = copy.deepcopy(arr)
             try:
-                if i % 5 == 4:  # i == 0 or i==1000:  #
+                if i % n_row == n_row-1:  # i == 0 or i==1000:  #
                     draw.array_of_cells_snapshot(str(i + 1),
-                                                 arr, str(i + 1).zfill(int(np.floor(np.log10(200)) + 1)))
+                                                 arr, str(i + 1).zfill(int(np.floor(np.log10(N_iteration)) + 1)))
                 arr.perform_total_step(cell, step)
-            except:
+            except Exception as e:
+                print(e)
                 draw.array_of_cells_snapshot('Most recent image',
                                              arr, 'Most_recent_img', step)
                 output_dir += '/Bug!'
