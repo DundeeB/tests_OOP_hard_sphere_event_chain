@@ -4,7 +4,7 @@ from Structure import *
 from SnapShot import View2D
 import os, shutil, random
 
-garb = 'test_garb'
+garb = '../simulation-results/test_garb'
 if os.path.exists(garb):
     shutil.rmtree(garb)
 os.mkdir(garb)
@@ -404,7 +404,7 @@ class TestEvent2DCells(TestCase):
         os.mkdir(output_dir)
         draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
-        N_iteration = 2*n_row**2
+        N_iteration = 2*n_row  # **2 not implemented for faster simulation
         for i in range(N_iteration):
             while True:
                 i_cell = random.randint(0, len(arr.all_cells) - 1)
@@ -485,4 +485,24 @@ class TestEvent2DCells(TestCase):
                 TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat, total_step)
                 raise
         draw.save_video("cubic_comb_2_species_transition", fps=6)
+        pass
+
+    def test_3D_rhoH_N_h_structure(self):
+        rho_H = 0.8
+        h = 1
+        n_row = 30
+        n_col = 30
+
+        N = n_row*n_col
+        r = 1
+        sig = 2*r
+        H = (h+1)*sig
+        a = np.sqrt(sig**2/(rho_H*(1+h)))
+        Lx = a*n_col
+        Ly = a*n_row
+        sim_name = 'N=' + str(N) + '_h=' + str(h) + '_rhoH=' + str(rho_H) + '_square_ECMC'
+
+        arr = Event2DCells(a, n_row, n_col)
+        arr.add_third_dimension_for_sphere(H)
+
         pass
