@@ -3,8 +3,9 @@ from EventChainActions import *
 from Structure import *
 from SnapShot import View2D
 import os, shutil, random
+epsilon = 1e-8
 
-garb = '../simulation-results/test_garb'
+garb = '../simulation-results/ECMC_tests'
 if os.path.exists(garb):
     shutil.rmtree(garb)
 os.mkdir(garb)
@@ -105,6 +106,7 @@ class TestEvent2DCells(TestCase):
         sphere = cell.spheres[i_sphere]
         step = Step(sphere, 7, v_hat, arr_before.boundaries)
         i, j = cell.ind[:2]
+        draw.dump_spheres(arr_before.all_centers, 'Before')
         arr_before.perform_total_step(i, j, step, draw)
         raise
 
@@ -488,21 +490,67 @@ class TestEvent2DCells(TestCase):
         pass
 
     def test_3D_rhoH_N_h_structure(self):
-        rho_H = 0.8
+        # Input
+        rho_H = 0.45
         h = 1
-        n_row = 30
-        n_col = 30
-
-        N = n_row*n_col
+        n_row = 15
+        n_col = 15
+        N_iteration = 10 * n_row  # **2 not implemented for faster simulation
+        n_sp_per_cell = 4
+        # More physical properties calculated from Input
+        N = n_row*n_col*n_sp_per_cell
         r = 1
         sig = 2*r
         H = (h+1)*sig
-        a = np.sqrt(sig**2/(rho_H*(1+h)))
-        Lx = a*n_col
-        Ly = a*n_row
+        a = sig*np.sqrt(1/(rho_H*(1+h)))  # rho_H = N*sig^3/(H*A), A = N*a^2
+        e = a*np.sqrt(n_sp_per_cell)
+        # Folder Handeling
         sim_name = 'N=' + str(N) + '_h=' + str(h) + '_rhoH=' + str(rho_H) + '_square_ECMC'
-
-        arr = Event2DCells(a, n_row, n_col)
+        output_dir = garb + '/' + sim_name
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        # construct array of cells and fill with spheres
+        arr = Event2DCells(edge=e, n_rows=n_row, n_columns=n_col)
         arr.add_third_dimension_for_sphere(H)
-
+        arr.generate_spheres_in_cubic_structure(n_spheres_per_cell=n_sp_per_cell, rad=r)
+        total_step = np.sqrt(n_row) * a
+        # Initialize View
+        draw = View2D(output_dir, arr.boundaries)
+        draw.array_of_cells_snapshot('Before run', arr, '0')
+        for i in range(N_iteration):
+            while True:
+                i_cell = random.randint(0, len(arr.all_cells) - 1)
+                cell = arr.all_cells[i_cell]
+                if len(cell.spheres) > 0:
+                    break
+            i_sphere = random.randint(0, len(cell.spheres) - 1)
+            sphere = cell.spheres[i_sphere]
+            if i % 4 == 0:
+                v_hat = (1, 0, 1)
+            if i % 4 == 1:
+                v_hat = (0, 1, 1)
+            if i % 4 == 2:
+                v_hat = (1, 0, -1)
+            else:
+                v_hat = (0, 1, -1)
+            v_hat = np.array(v_hat)/np.linalg.norm(v_hat)
+            step = Step(sphere, total_step, v_hat, arr.boundaries)
+            temp_arr = copy.deepcopy(arr)
+            try:
+                if i % n_row == n_row - 1:  # i == 0 or i==1000:  #
+                    draw.array_of_cells_snapshot(str(i + 1),
+                                                 arr, str(i + 1).zfill(int(np.floor(np.log10(N_iteration)) + 1)))
+                    draw.dump_spheres(arr.all_centers, str(i + 1))
+                i, j = cell.ind[:2]
+                arr.perform_total_step(i, j, step)
+                assert arr.legal_configuration()  # tbd remove it to speed up simulation
+            except Exception as e:
+                print(e)
+                draw.array_of_cells_snapshot('Most recent image',
+                                             arr, 'Most_recent_img', step)
+                output_dir += '/Bug'
+                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat)
+                raise
+        draw.save_video("2D_image_of_3D_spheres", fps=6)
         pass
