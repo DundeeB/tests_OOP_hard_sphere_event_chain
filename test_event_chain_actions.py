@@ -495,8 +495,8 @@ class TestEvent2DCells(TestCase):
         h = 1
         n_row = 15
         n_col = 15
-        N_iteration = 10 * n_row  # **2 not implemented for faster simulation
-        n_sp_per_cell = 4
+        N_iteration = 100 # not implemented for faster simulation
+        n_sp_per_cell = 1
         # More physical properties calculated from Input
         N = n_row*n_col*n_sp_per_cell
         r = 1
@@ -514,6 +514,82 @@ class TestEvent2DCells(TestCase):
         arr = Event2DCells(edge=e, n_rows=n_row, n_columns=n_col)
         arr.add_third_dimension_for_sphere(H)
         arr.generate_spheres_in_cubic_structure(n_spheres_per_cell=n_sp_per_cell, rad=r)
+        total_step = np.sqrt(n_row) * a
+        # Initialize View
+        draw = View2D(output_dir, arr.boundaries)
+        draw.array_of_cells_snapshot('Before run', arr, '0')
+        for i in range(N_iteration):
+            while True:
+                i_cell = random.randint(0, len(arr.all_cells) - 1)
+                cell = arr.all_cells[i_cell]
+                if len(cell.spheres) > 0:
+                    break
+            i_sphere = random.randint(0, len(cell.spheres) - 1)
+            sphere = cell.spheres[i_sphere]
+            if i % 4 == 0:
+                v_hat = (1, 0, 1)
+            if i % 4 == 1:
+                v_hat = (0, 1, 1)
+            if i % 4 == 2:
+                v_hat = (1, 0, -1)
+            else:
+                v_hat = (0, 1, -1)
+            v_hat = np.array(v_hat)/np.linalg.norm(v_hat)
+            step = Step(sphere, total_step, v_hat, arr.boundaries)
+            temp_arr = copy.deepcopy(arr)
+            try:
+                if i % n_row == n_row - 1:  # i == 0 or i==1000:  #
+                    draw.array_of_cells_snapshot(str(i + 1),
+                                                 arr, str(i + 1).zfill(int(np.floor(np.log10(N_iteration)) + 1)))
+                    draw.dump_spheres(arr.all_centers, str(i + 1))
+                i, j = cell.ind[:2]
+                arr.perform_total_step(i, j, step)
+                assert arr.legal_configuration()  # tbd remove it to speed up simulation
+            except Exception as e:
+                print(e)
+                draw.array_of_cells_snapshot('Most recent image',
+                                             arr, 'Most_recent_img', step)
+                output_dir += '/Bug'
+                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, v_hat)
+                raise
+        draw.save_video("2D_image_of_3D_spheres", fps=6)
+        pass
+
+    def test_3D_rhoH_N_h_AF_structure(self):
+        # Input
+        rho_H = 0.9  # closest rho_H, the code will generate it with different but close value
+        h = 1
+        n_row = 25
+        n_col = 9
+        N_iteration = 100  # not implemented for faster simulation
+        n_sp_per_dim_per_cell = 1
+        # More physical properties calculated from Input
+        N = n_row*n_col
+        r = 1
+        sig = 2*r
+        H = (h+1)*sig
+        # build input parameters for cells
+        a_dest = sig*np.sqrt(2/(rho_H*(1+h)*np.sin(np.pi/3)))
+        l_y_dest = a_dest * n_row/2 * np.sin(np.pi/3)
+        e = n_sp_per_dim_per_cell*a_dest
+        n_col_cells = int(n_col/n_sp_per_dim_per_cell)
+        n_row_cells = int(round(l_y_dest/e))
+        l_x = n_col_cells * e
+        l_y = n_row_cells * e
+
+        a = np.sqrt(l_x*l_y/N)  # rho_H = N*sig^3/(H*A), A = N*a^2
+        rho_H = (sig**2)/((a**2)*(h+1))
+        print("New rho_H chosen: " + str(rho_H))
+        # Folder Handeling
+        sim_name = 'N=' + str(N) + '_h=' + str(h) + '_rhoH=' + str(rho_H) + '_AF_triangle_ECMC'
+        output_dir = garb + '/' + sim_name
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.mkdir(output_dir)
+        # construct array of cells and fill with spheres
+        arr = Event2DCells(edge=e, n_rows=n_row_cells, n_columns=n_col_cells)
+        arr.add_third_dimension_for_sphere(H)
+        arr.generate_spheres_in_AF_triangular_structure(n_row, n_col, r)
         total_step = np.sqrt(n_row) * a
         # Initialize View
         draw = View2D(output_dir, arr.boundaries)
