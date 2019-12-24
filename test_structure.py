@@ -3,7 +3,7 @@ from Structure import *
 import os, numpy as np
 from SnapShot import View2D
 
-output_dir = 'test_garb'
+output_dir = '../simulation-results/ECMC_tests'
 if not os.path.isdir(output_dir): os.mkdir(output_dir)
 
 
@@ -206,7 +206,7 @@ class TestArrayOfCells(TestCase):
 
     def test_draw_nominal_arr(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        draw = View2D('test_garb', arr.boundaries)
+        draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Nominal', arr, 'Nominal')
 
     def test_all_spheres(self):
@@ -233,7 +233,7 @@ class TestArrayOfCells(TestCase):
             bound = CubeBoundaries([2, 2], 2 * [BoundaryType.CYCLIC])
             arr = ArrayOfCells(2, bound, [[cell1], [cell2]])
             if not arr.overlap_2_cells(cell1, cell2):
-                draw = View2D('test_garb', bound)
+                draw = View2D(output_dir, bound)
                 draw.array_of_cells_snapshot('Test direct_overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
 
@@ -251,7 +251,7 @@ class TestArrayOfCells(TestCase):
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
         bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
-        draw = View2D('test_garb', bound)
+        draw = View2D(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_x_cyclic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
@@ -262,7 +262,7 @@ class TestArrayOfCells(TestCase):
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
         bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
-        draw = View2D('test_garb', bound)
+        draw = View2D(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_y_cylic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
@@ -273,7 +273,7 @@ class TestArrayOfCells(TestCase):
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
         bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
-        draw = View2D('test_garb', bound)
+        draw = View2D(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_both_cylic')
         return
 
@@ -281,7 +281,7 @@ class TestArrayOfCells(TestCase):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
         arr.boundaries = CubeBoundaries(arr.boundaries.edges, [BoundaryType.CYCLIC, BoundaryType.WALL])
         arr.random_generate_spheres(3, 0.1)
-        draw = View2D('test_garb', arr.boundaries)
+        draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Test Random Generate spheres and legal configuration',
                                      arr, 'TestLegalConfiguration')
         return
@@ -294,7 +294,7 @@ class TestArrayOfCells(TestCase):
                 cells[i][j] = arr.cells[i][j]
         arr = ArrayOfCells(arr.dim, arr.boundaries, cells)
         arr.boundaries = CubeBoundaries(arr.boundaries.edges + np.array([-1, 0]), arr.boundaries.boundaries_type)
-        draw = View2D('test_garb', arr.boundaries)
+        draw = View2D(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Test rows differ columns',
                                      arr, 'TestRowsDiffCol')
 

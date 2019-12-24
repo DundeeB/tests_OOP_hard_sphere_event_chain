@@ -542,8 +542,8 @@ class TestEvent2DCells(TestCase):
                     draw.array_of_cells_snapshot(str(i + 1),
                                                  arr, str(i + 1).zfill(int(np.floor(np.log10(N_iteration)) + 1)))
                     draw.dump_spheres(arr.all_centers, str(i + 1))
-                i, j = cell.ind[:2]
-                arr.perform_total_step(i, j, step)
+                i_cell, j_cell = cell.ind[:2]
+                arr.perform_total_step(i_cell, j_cell, step)
                 assert arr.legal_configuration()  # tbd remove it to speed up simulation
             except Exception as e:
                 print(e)
@@ -618,8 +618,8 @@ class TestEvent2DCells(TestCase):
                     draw.array_of_cells_snapshot(str(i + 1),
                                                  arr, str(i + 1).zfill(int(np.floor(np.log10(N_iteration)) + 1)))
                     draw.dump_spheres(arr.all_centers, str(i + 1))
-                i, j = cell.ind[:2]
-                arr.perform_total_step(i, j, step)
+                i_cell, j_cell = cell.ind[:2]
+                arr.perform_total_step(i_cell, j_cell, step)
                 assert arr.legal_configuration()  # tbd remove it to speed up simulation
             except Exception as e:
                 print(e)

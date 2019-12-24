@@ -5,7 +5,7 @@ import os, copy
 
 spheres = [Sphere((x, y), 0.1) for x, y in
            zip([0.2, 0.5, 0.8, 1.5], [0.1, 0.7, 0.9, 1.95])]
-output_dir = 'test_garb'
+output_dir = '../simulation-results/ECMC_tests'
 if not os.path.isdir(output_dir): os.mkdir(output_dir)
 boundaries = CubeBoundaries([3, 3], [BoundaryType.CYCLIC for _ in range(2)])
 view = View2D(output_dir, boundaries)
