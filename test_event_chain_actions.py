@@ -1,7 +1,7 @@
 from unittest import TestCase
 from EventChainActions import *
 from Structure import *
-from SnapShot import View2D
+from SnapShot import WriteOrLoad
 import os, shutil, random
 epsilon = 1e-8
 
@@ -89,7 +89,7 @@ class TestEvent2DCells(TestCase):
 
         self.assertTrue(arr.legal_configuration())
         if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         arr.perform_total_step(i_cell, j_cell, step, draw)
         draw.array_of_cells_snapshot('After Step (Searching direct_overlap bug)',
                                      arr, 'After_step', step)
@@ -101,7 +101,7 @@ class TestEvent2DCells(TestCase):
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.mkdir(output_dir)
-        draw = View2D(output_dir, arr_before.boundaries)
+        draw = WriteOrLoad(output_dir, arr_before.boundaries)
         cell = arr_before.all_cells[i_cell]
         sphere = cell.spheres[i_sphere]
         step = Step(sphere, 7, v_hat, arr_before.boundaries)
@@ -112,7 +112,7 @@ class TestEvent2DCells(TestCase):
 
     def test_init(self):
         arr = TestEvent2DCells.some_arr()
-        draw = View2D(garb, arr.boundaries)
+        draw = WriteOrLoad(garb, arr.boundaries)
         draw.array_of_cells_snapshot('Test init evend 2d cells',
                                      arr, 'TestEvend2dCells')
         return
@@ -137,7 +137,7 @@ class TestEvent2DCells(TestCase):
         arr.cells[0][0].append(sphere2)
         output_dir = garb + '/2-spheres-cushion'
         if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         step = Step(sphere1, total_step, v_hat, arr.boundaries)
         draw.array_of_cells_snapshot('Without Boundary', arr, 'Without_boundary', step)
         cushioned = arr.cushioning_array_for_boundary_cond()
@@ -160,7 +160,7 @@ class TestEvent2DCells(TestCase):
         arr.cells[0][1].append(sphere2)
         output_dir = garb + '/2-spheres'
         if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         step = Step(sphere1, total_step, v_hat, arr.boundaries)
         arr.perform_total_step(0, 0, step, draw)
         draw.array_of_cells_snapshot('After Step (Searching direct_overlap bug)',
@@ -183,7 +183,7 @@ class TestEvent2DCells(TestCase):
         arr.cells[0][0].append(sphere2)
         output_dir = garb + '/2-spheres-cyclic'
         if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         step = Step(sphere1, total_step, v_hat, arr.boundaries)
         arr.perform_total_step(0, 0, step, draw)
         draw.array_of_cells_snapshot('After Step (Searching direct_overlap bug)',
@@ -263,7 +263,7 @@ class TestEvent2DCells(TestCase):
 
         self.assertTrue(arr.legal_configuration())
         if not os.path.isdir(output_dir): os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         arr.perform_total_step(i_cell, j_cell, step, draw)
         draw.array_of_cells_snapshot('After Step (Searching direct_overlap bug)',
                                      arr, 'After_step', step)
@@ -275,7 +275,7 @@ class TestEvent2DCells(TestCase):
         output_dir = garb
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('cubic structure', arr, 'cubic_struct')
 
     def test_generate_spheres_many_times_perform_large_step(self):
@@ -404,7 +404,7 @@ class TestEvent2DCells(TestCase):
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
         N_iteration = 2*n_row  # **2 not implemented for faster simulation
         for i in range(N_iteration):
@@ -458,7 +458,7 @@ class TestEvent2DCells(TestCase):
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.mkdir(output_dir)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
         for i in range(N):
             while True:
@@ -516,7 +516,7 @@ class TestEvent2DCells(TestCase):
         arr.generate_spheres_in_cubic_structure(n_spheres_per_cell=n_sp_per_cell, rad=r)
         total_step = np.sqrt(n_row) * a
         # Initialize View
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
         for i in range(N_iteration):
             while True:
@@ -592,7 +592,7 @@ class TestEvent2DCells(TestCase):
         arr.generate_spheres_in_AF_triangular_structure(n_row, n_col, r)
         total_step = np.sqrt(n_row) * a
         # Initialize View
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Before run', arr, '0')
         for i in range(N_iteration):
             while True:

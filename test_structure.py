@@ -1,7 +1,7 @@
 from unittest import TestCase
 from Structure import *
 import os, numpy as np
-from SnapShot import View2D
+from SnapShot import WriteOrLoad
 
 output_dir = '../simulation-results/ECMC_tests'
 if not os.path.isdir(output_dir): os.mkdir(output_dir)
@@ -30,12 +30,12 @@ class TestSphere(TestCase):
         self.assertLessEqual(sphere.center[1], 1)
 
     def test_perform_step(self):
-        boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
-        sphere = Sphere((0.5, 0.5), 0.3)
-        v_hat = np.array((1, 1))/np.sqrt(2)
-        sphere.perform_step(v_hat, 0.6*np.sqrt(2), boundaries)
+        boundaries = CubeBoundaries([1, 1, 10], [BoundaryType.CYCLIC for _ in range(3)])
+        sphere = Sphere((0.5, 0.5, 0), 0.3)
+        direction = Direction(0)
+        sphere.perform_step(direction, 0.6, boundaries)
         self.assertAlmostEqual(sphere.center[0], 0.1)
-        self.assertAlmostEqual(sphere.center[1], 0.1)
+        self.assertAlmostEqual(sphere.center[1], 0.5)
 
 
 class TestCubeBoundaries(TestCase):
@@ -61,75 +61,31 @@ class TestCubeBoundaries(TestCase):
         for v1, v2 in zip(vertices, vertices_should):
             self.assertEqual(v1, v2)
 
-    def test_vertical_step_to_wall(self):
-        cube = CubeBoundaries([1], [BoundaryType.WALL])
-        pt = (0.4,)
-        assert_list(self, CubeBoundaries.vertical_step_to_wall(cube.planes[0], pt), (-0.4,))
-        assert_list(self, CubeBoundaries.vertical_step_to_wall(cube.planes[1], pt), (0.6,))
-
-        cube = CubeBoundaries([1, 2], [BoundaryType.WALL, BoundaryType.WALL])
-        pt = (0.5, 1.5)
-        assert_list(self, CubeBoundaries.vertical_step_to_wall(cube.planes[0], pt), (0, -1.5))
-        assert_list(self, CubeBoundaries.vertical_step_to_wall(cube.planes[1], pt), (-0.5, 0))
-        assert_list(self, CubeBoundaries.vertical_step_to_wall(cube.planes[2], pt), (0.5, 0))
-        assert_list(self, CubeBoundaries.vertical_step_to_wall(cube.planes[3], pt), (0, 0.5))
-
-        #TBD implement test for 3d
-
-    def test_flip_v_hat_wall_part(self):
-        sphere = Sphere((0.3, 0.5), 0.3)
-        cube = CubeBoundaries([1, 2], [BoundaryType.WALL, BoundaryType.WALL])
-        n_hat_old = (-1, 0)
-        n_hat_new = CubeBoundaries.flip_v_hat_at_wall(cube.planes[0], sphere, n_hat_old)
-        assert_list(self, n_hat_new, (-1, 0))
-        n_hat_new = CubeBoundaries.flip_v_hat_at_wall(cube.planes[1], sphere, n_hat_old)
-        assert_list(self, n_hat_new, (1, 0))
-        n_hat_old = (1, 0)
-        n_hat_new = CubeBoundaries.flip_v_hat_at_wall(cube.planes[2], sphere, n_hat_old)
-        assert_list(self, n_hat_new, (-1, 0))
-        n_hat_new = CubeBoundaries.flip_v_hat_at_wall(cube.planes[3], sphere, n_hat_old)
-        assert_list(self, n_hat_new, (1, 0))
-
-        # TBD implement test for 3d
-
 
 class TestMetric(TestCase):
     def test_dist_to_boundary(self):
-        bound = CubeBoundaries([1, 2], [BoundaryType.CYCLIC, BoundaryType.WALL])
-        sphere = Sphere((0.5, 0.5), 0.1)
-        v_hat = np.array([1, 1])/np.sqrt(2)
-        dist_to_hit, wall_to_hit = Metric.dist_to_boundary(sphere, 3, v_hat, bound)
-        self.assertAlmostEqual(dist_to_hit, 1.4*np.sqrt(2))
-        self.assertEqual(wall_to_hit, bound.planes[3])
-
-    def test_dist_to_boundary_without_r(self):
-        bound = CubeBoundaries([1, 2], [BoundaryType.CYCLIC, BoundaryType.WALL])
-        sphere = Sphere((0.5, 0.5), 0.1)
-        v_hat = np.array([1, 1]) / np.sqrt(2)
-        dist_to_hit, wall_to_hit = Metric.dist_to_boundary_without_r(sphere, 3, v_hat, bound)
-        self.assertAlmostEqual(dist_to_hit, 0.5 * np.sqrt(2), 5)
-        self.assertEqual(wall_to_hit, bound.planes[2])
+        bound = CubeBoundaries([1, 2, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL])
+        sphere = Sphere((0.5, 0.5, 0.5), 0.1)
+        direction = Direction(2)
+        dist_to_hit = Metric.dist_to_wall(sphere, 3, direction, bound)
+        self.assertAlmostEqual(dist_to_hit, 3 - 0.5 - 0.1)
 
     def test_dist_to_collision(self):
-        sphere1 = Sphere((0.5, 1), 0.3)
-        sphere2 = Sphere((0.5, 2), 0.3)
+        sphere1 = Sphere((0.5, 1, 1), 0.3)
+        sphere2 = Sphere((0.5, 2, 1), 0.3)
         diam = sphere1.rad + sphere2.rad
-        v_hat = np.array((0, 1))
-        bound = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.WALL])
-        d1 = Metric.dist_to_collision(sphere1, sphere2, 10, v_hat, bound)
-        self.assertAlmostEqual(d1, 1-diam)
-        d1 = Metric.dist_to_collision(sphere1, sphere2, 0.1, v_hat, bound)
+        direction = Direction(1)
+        bound = CubeBoundaries([3, 3, 5], 3*[BoundaryType.WALL])
+        d1 = Metric.dist_to_collision(sphere1, sphere2, 10, direction, bound)
+        self.assertAlmostEqual(d1, 1 - diam)
+        d1 = Metric.dist_to_collision(sphere1, sphere2, 0.1, direction, bound)
         self.assertEqual(d1, float('inf'))
-
-        bound = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.CYCLIC])
-        d1 = Metric.dist_to_collision(sphere1, sphere2, 10, -v_hat, bound)
-        self.assertAlmostEqual(d1, 2-diam,5)
 
 
 class TestCell(TestCase):
     def test_add_spheres(self):
         cell = Cell((1, 1), [2, 2], (0, 0), [Sphere((0, 0, 0), 1), Sphere((3, 3, 3), 3)])
-        sp = Sphere((0,1), 2)
+        sp = Sphere((0, 1), 2)
         cell.append(sp)
         self.assertEqual(cell.spheres[-1], sp)
 
@@ -153,7 +109,7 @@ class TestCell(TestCase):
 
     def test_random_generate_spheres(self):
         cell = Cell((0, 0), [4, 4], (0, 0))
-        cell.random_generate_spheres(3, 3*[0.5], extra_edges=[1])
+        cell.random_generate_spheres(3, 3 * [0.5], extra_edges=[1])
         for sphere in cell.spheres:
             self.assertTrue(cell.center_in_cell(sphere))
             z = sphere.center[-1]
@@ -206,7 +162,7 @@ class TestArrayOfCells(TestCase):
 
     def test_draw_nominal_arr(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Nominal', arr, 'Nominal')
 
     def test_all_spheres(self):
@@ -233,13 +189,13 @@ class TestArrayOfCells(TestCase):
             bound = CubeBoundaries([2, 2], 2 * [BoundaryType.CYCLIC])
             arr = ArrayOfCells(2, bound, [[cell1], [cell2]])
             if not arr.overlap_2_cells(cell1, cell2):
-                draw = View2D(output_dir, bound)
+                draw = WriteOrLoad(output_dir, bound)
                 draw.array_of_cells_snapshot('Test direct_overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
 
         cell = Cell((0, 0), [1, 1], (0, 0), [Sphere((0.1, 0.5), 0.2)])
         neighbor = Cell((0, 1), [1, 1], (0, 0), [Sphere((0.1, 1.5), 0.2)])
-        arr = ArrayOfCells(2, CubeBoundaries([2, 1], 2*[BoundaryType.CYCLIC]), [[cell], [neighbor]])
+        arr = ArrayOfCells(2, CubeBoundaries([2, 1], 2 * [BoundaryType.CYCLIC]), [[cell], [neighbor]])
         self.assertTrue(arr.overlap_2_cells(cell, neighbor))
 
     def test_cushioning_array_for_boundary_cond(self):
@@ -251,7 +207,7 @@ class TestArrayOfCells(TestCase):
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
         bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
-        draw = View2D(output_dir, bound)
+        draw = WriteOrLoad(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_x_cyclic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
@@ -262,7 +218,7 @@ class TestArrayOfCells(TestCase):
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
         bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
-        draw = View2D(output_dir, bound)
+        draw = WriteOrLoad(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_y_cylic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
@@ -273,7 +229,7 @@ class TestArrayOfCells(TestCase):
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
         bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
-        draw = View2D(output_dir, bound)
+        draw = WriteOrLoad(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_both_cylic')
         return
 
@@ -281,7 +237,7 @@ class TestArrayOfCells(TestCase):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
         arr.boundaries = CubeBoundaries(arr.boundaries.edges, [BoundaryType.CYCLIC, BoundaryType.WALL])
         arr.random_generate_spheres(3, 0.1)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Test Random Generate spheres and legal configuration',
                                      arr, 'TestLegalConfiguration')
         return
@@ -294,10 +250,10 @@ class TestArrayOfCells(TestCase):
                 cells[i][j] = arr.cells[i][j]
         arr = ArrayOfCells(arr.dim, arr.boundaries, cells)
         arr.boundaries = CubeBoundaries(arr.boundaries.edges + np.array([-1, 0]), arr.boundaries.boundaries_type)
-        draw = View2D(output_dir, arr.boundaries)
+        draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Test rows differ columns',
                                      arr, 'TestRowsDiffCol')
 
     def test_cell_from_ind(self):
         arr, _, cells = TestArrayOfCells.construct_some_arr_cell()
-        self.assertEqual(arr.cell_from_ind((0,0)), cells[0])
+        self.assertEqual(arr.cell_from_ind((0, 0)), cells[0])

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from SnapShot import View2D
+from SnapShot import WriteOrLoad
 from Structure import Sphere, CubeBoundaries, BoundaryType, ArrayOfCells, Cell
 import os, copy
 
@@ -8,7 +8,7 @@ spheres = [Sphere((x, y), 0.1) for x, y in
 output_dir = '../simulation-results/ECMC_tests'
 if not os.path.isdir(output_dir): os.mkdir(output_dir)
 boundaries = CubeBoundaries([3, 3], [BoundaryType.CYCLIC for _ in range(2)])
-view = View2D(output_dir, boundaries)
+view = WriteOrLoad(output_dir, boundaries)
 
 
 class TestView2D(TestCase):
