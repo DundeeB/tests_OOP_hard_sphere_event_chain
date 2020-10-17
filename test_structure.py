@@ -31,11 +31,25 @@ class TestSphere(TestCase):
 
     def test_perform_step(self):
         boundaries = CubeBoundaries([1, 1, 10], [BoundaryType.CYCLIC for _ in range(3)])
-        sphere = Sphere((0.5, 0.5, 0), 0.3)
+
+        sphere = Sphere((0.5, 0.5, 1), 0.3)
         direction = Direction(0)
         sphere.perform_step(direction, 0.6, boundaries)
         self.assertAlmostEqual(sphere.center[0], 0.1)
         self.assertAlmostEqual(sphere.center[1], 0.5)
+
+        sphere = Sphere((0.5, 0.5, 1), 0.3)
+        direction = Direction(1)
+        sphere.perform_step(direction, 0.6, boundaries)
+        self.assertAlmostEqual(sphere.center[0], 0.5)
+        self.assertAlmostEqual(sphere.center[1], 0.1)
+
+        sphere = Sphere((0.5, 0.5, 1), 0.3)
+        direction = Direction(2)
+        sphere.perform_step(direction, 0.6, boundaries)
+        self.assertAlmostEqual(sphere.center[0], 0.5)
+        self.assertAlmostEqual(sphere.center[1], 0.5)
+        self.assertAlmostEqual(sphere.center[2], 1.6)
 
 
 class TestCubeBoundaries(TestCase):
