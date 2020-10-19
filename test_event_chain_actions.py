@@ -40,13 +40,12 @@ class TestStep(TestCase):
 
         step.total_step = 100
         step.current_step = np.nan
-        step.direction = Direction(0)
+        step.direction = Direction(1)
         event = step.next_event([])
         self.assertEqual(event.event_type, EventType.FREE)
 
-        step.total_step = 2
         step.current_step = np.nan
-        step.direction = Direction(2)
+        step.direction = Direction(2, -1)
         event = step.next_event([])
         self.assertEqual(event.event_type, EventType.WALL)
 
@@ -69,6 +68,7 @@ class TestEvent2DCells(TestCase):
 
     def three_spheres_test(self, sphere1, sphere2, sphere3, output_dir, total_step=7):
         arr = Event2DCells(2, 5, 5)
+        arr.add_third_dimension_for_sphere(3)
         sphere = sphere1
         spheres = [sphere1, sphere2, sphere3]
         spheres_added = []
@@ -110,26 +110,20 @@ class TestEvent2DCells(TestCase):
         arr_before.perform_total_step(i, j, step, draw)
         raise
 
-    def test_init(self):
-        arr = TestEvent2DCells.some_arr()
-        draw = WriteOrLoad(garb, arr.boundaries)
-        draw.array_of_cells_snapshot('Test init evend 2d cells',
-                                     arr, 'TestEvend2dCells')
-        return
-
-    def test_closest_site_2d(self):
-        arr = TestEvent2DCells.some_arr()
-        sphere = Sphere((0.1, 1, 0.3), 0.3)
-        cite_ind = arr.closest_site_2d(sphere.center)
-        cell = arr.cell_from_ind(cite_ind)
-        self.assertEqual(cell.site, (0, 1))
+    # def test_init(self):
+    #     arr = TestEvent2DCells.some_arr()
+    #     draw = WriteOrLoad(garb, arr.boundaries)
+    #     draw.array_of_cells_snapshot('Test init evend 2d cells',
+    #                                  arr, 'TestEvend2dCells')
+    #     return
 
     def test_cushion_l_x_not_l_y(self):
         arr = Event2DCells(1, 1, 2)
-        arr.boundaries.boundaries_type = [BoundaryType.CYCLIC, BoundaryType.WALL]
+        arr.add_third_dimension_for_sphere(1)
+        arr.boundaries.boundaries_type = [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL]
         r = 0.2
-        sphere1 = Sphere((0.5, 0.7), r)
-        sphere2 = Sphere((0.1, 0.5), r)
+        sphere1 = Sphere((0.5, 0.7, 0.5), r)
+        sphere2 = Sphere((0.1, 0.5, 0.5), r)
         direction = Direction(0)
         total_step = 2
 
@@ -148,13 +142,14 @@ class TestEvent2DCells(TestCase):
 
     def test_simple_step_2_spheres(self):
         arr = Event2DCells(1, 1, 2)
+        arr.add_third_dimension_for_sphere(1)
         r = 0.2
-        sphere1 = Sphere((0.5, 0.5), r)
-        sphere2 = Sphere((1.5, 0.5), r)
+        sphere1 = Sphere((0.5, 0.5, 0.5), r)
+        sphere2 = Sphere((1.5, 0.5, 0.5), r)
         direction = Direction(0)
         total_step = 1.2
-        new_loc_1 = (1.1, 0.5)
-        new_loc_2 = (0.1, 0.5)
+        new_loc_1 = (1.1, 0.5, 0.5)
+        new_loc_2 = (0.1, 0.5, 0.5)
 
         arr.cells[0][0].append(sphere1)
         arr.cells[0][1].append(sphere2)
@@ -170,14 +165,15 @@ class TestEvent2DCells(TestCase):
         assert_list(self, sphere2.center, new_loc_2)
 
     def test_collide_through_cyclic_boundary(self):
-        arr = Event2DCells(1, 1, 2)
+        arr = Event2DCells(1, 2, 2)
+        arr.add_third_dimension_for_sphere(1)
         r = 0.2
-        sphere1 = Sphere((0.5, 0.5), r)
-        sphere2 = Sphere((0.1, 0.5), r)
+        sphere1 = Sphere((0.5, 0.5, 0.5), r)
+        sphere2 = Sphere((0.1, 0.5, 0.5), r)
         direction = Direction(0)
         total_step = 2
-        new_loc_1 = (1.7, 0.5)
-        new_loc_2 = (0.9, 0.5)
+        new_loc_1 = (1.7, 0.5, 0.5)
+        new_loc_2 = (0.9, 0.5, 0.5)
 
         arr.cells[0][0].append(sphere1)
         arr.cells[0][0].append(sphere2)
@@ -193,52 +189,52 @@ class TestEvent2DCells(TestCase):
 
     def test_collide_through_cyclic_boundary_3_spheres(self):
         r = 0.3
-        sphere1 = Sphere((0.99, 2.7), r)
-        sphere2 = Sphere((1.2, 0.4), r)
-        sphere3 = Sphere((1.8, 0.6), r)
+        sphere1 = Sphere((0.99, 2.7, 0.5), r)
+        sphere2 = Sphere((1.2, 0.4, 0.5), r)
+        sphere3 = Sphere((1.8, 0.6, 0.5), r)
         output_dir = garb + '/3-spheres-cyclic'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_generate_spheres_save_pic(self):
-        sphere1 = Sphere((1.10, 0.50), 0.3)
-        sphere2 = Sphere((2.01, 0.80), 0.3)
-        sphere3 = Sphere((2.20, 1.75), 0.3)
+        sphere1 = Sphere((1.10, 0.50, 0.5), 0.3)
+        sphere2 = Sphere((2.01, 0.80, 0.5), 0.3)
+        sphere3 = Sphere((2.20, 1.75, 0.5), 0.3)
         output_dir = garb + '/random_spheres'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_around_ps_should_be_center_off_sphere(self):
-        sphere1 = Sphere((1.4, 2.01), 0.3)
-        sphere2 = Sphere((2.01, 1.99), 0.3)
-        sphere3 = Sphere((2.5, 2.5), 0.3)
+        sphere1 = Sphere((1.4, 2.01, 0.5), 0.3)
+        sphere2 = Sphere((2.01, 1.99, 0.5), 0.3)
+        sphere3 = Sphere((2.5, 2.5, 0.5), 0.3)
         output_dir = garb + '/ps_should_be_center_off_sphere'
         total_step = 0.3 * np.sqrt(2)
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir, total_step)
 
     def test_up_boundary_left(self):
-        sphere1 = Sphere((0.05, 0.8), 0.3)
-        sphere2 = Sphere((1.05, 1.55), 0.3)
-        sphere3 = Sphere((2.99, 1.4), 0.3)
+        sphere1 = Sphere((0.05, 0.8, 0.5), 0.3)
+        sphere2 = Sphere((1.05, 1.55, 0.5), 0.3)
+        sphere3 = Sphere((2.99, 1.4, 0.5), 0.3)
         output_dir = garb + '/up_boundary_left'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_up_boundary_right(self):
-        sphere1 = Sphere((0.5, 1.29), 0.3)
-        sphere2 = Sphere((0.29, 0.7), 0.3)
-        sphere3 = Sphere((2.9, 1.4), 0.3)
+        sphere1 = Sphere((0.5, 1.29, 0.5), 0.3)
+        sphere2 = Sphere((0.29, 0.7, 0.5), 0.3)
+        sphere3 = Sphere((2.9, 1.4, 0.5), 0.3)
         output_dir = garb + '/up_boundary_right'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_large_to_up_right(self):
-        sphere1 = Sphere((1.01, 1.01), 0.3)
-        sphere2 = Sphere((2.35, 2.85), 0.3)
-        sphere3 = Sphere((2.9, 2.6), 0.3)
+        sphere1 = Sphere((1.01, 1.01, 0.5), 0.3)
+        sphere2 = Sphere((2.35, 2.85, 0.5), 0.3)
+        sphere3 = Sphere((2.9, 2.6, 0.5), 0.3)
         output_dir = garb + '/large_to_up_right'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
     def test_on_boundaries(self):
-        sphere1 = Sphere((0.10, 1.05), 0.3)
-        sphere2 = Sphere((1.80, 2.95), 0.3)
-        sphere3 = Sphere((2.00, 0.60), 0.3)
+        sphere1 = Sphere((0.10, 1.05, 0.5), 0.3)
+        sphere2 = Sphere((1.80, 2.95, 0.5), 0.3)
+        sphere3 = Sphere((2.00, 0.60, 0.5), 0.3)
         output_dir = garb + '/on_boundaries'
         self.three_spheres_test(sphere1, sphere2, sphere3, output_dir)
 
@@ -272,6 +268,7 @@ class TestEvent2DCells(TestCase):
 
     def test_generate_spheres_in_cubic_structure(self):
         arr = Event2DCells(1, 10, 10)
+        arr.add_third_dimension_for_sphere(1)
         arr.generate_spheres_in_cubic_structure(1, 0.3)
         output_dir = garb
         if not os.path.exists(output_dir):
@@ -280,7 +277,7 @@ class TestEvent2DCells(TestCase):
         draw.array_of_cells_snapshot('cubic structure', arr, 'cubic_struct')
 
     def test_generate_spheres_many_times_perform_large_step(self):
-        for i in range(100):
+        for i in range(10):
             arr = TestEvent2DCells.some_arr()
             cell = arr.cells[0][0]
             sphere = cell.spheres[0]
@@ -295,31 +292,32 @@ class TestEvent2DCells(TestCase):
                 raise
         pass
 
-    def test_spheres_do_many_steps(self):
-        arr = TestEvent2DCells.some_arr()
-        for i in range(10):
-            while True:
-                i_cell = random.randint(0, len(arr.all_cells) - 1)
-                cell = arr.all_cells[i_cell]
-                if len(cell.spheres) > 0:
-                    break
-            i_sphere = random.randint(0, len(cell.spheres) - 1)
-            sphere = cell.spheres[i_sphere]
-            direction = Direction.directions()[random.randint(0, 3)]
-            step = Step(sphere, 7, direction, arr.boundaries)
-            temp_arr = copy.deepcopy(arr)
-            try:
-                i, j = cell.ind[:2]
-                arr.perform_total_step(i, j, step)
-                assert arr.legal_configuration()
-            except:
-                output_dir = garb + '/many_steps'
-                TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, direction)
-                raise
-        pass
+    # def test_spheres_do_many_steps(self):
+    #     arr = TestEvent2DCells.some_arr()
+    #     for i in range(10):
+    #         while True:
+    #             i_cell = random.randint(0, len(arr.all_cells) - 1)
+    #             cell = arr.all_cells[i_cell]
+    #             if len(cell.spheres) > 0:
+    #                 break
+    #         i_sphere = random.randint(0, len(cell.spheres) - 1)
+    #         sphere = cell.spheres[i_sphere]
+    #         direction = Direction.directions()[random.randint(0, 3)]
+    #         step = Step(sphere, 7, direction, arr.boundaries)
+    #         temp_arr = copy.deepcopy(arr)
+    #         try:
+    #             i, j = cell.ind[:2]
+    #             arr.perform_total_step(i, j, step)
+    #             assert arr.legal_configuration()
+    #         except:
+    #             output_dir = garb + '/many_steps'
+    #             TestEvent2DCells.track_step(temp_arr, output_dir, i_cell, i_sphere, direction)
+    #             raise
+    #     pass
 
     def test_steps_in_random_directions(self):
         arr = Event2DCells(1, 6, 5)
+        arr.add_third_dimension_for_sphere(1)
         arr.generate_spheres_in_cubic_structure(2, 0.2)
         for i in range(50):
             while True:
@@ -347,7 +345,7 @@ class TestEvent2DCells(TestCase):
         r = 0.1
         arr = Event2DCells(1, 1, 1)
         arr.add_third_dimension_for_sphere(2)
-        total_step = 0.5 * np.sqrt(2)
+        total_step = 0.5
         output_dir = garb + '/3d_1_sphere'
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
@@ -356,38 +354,39 @@ class TestEvent2DCells(TestCase):
         cell = arr.cells[i][j]
         sphere = Sphere((epsilon, epsilon, 0.15), r)
         cell.append(sphere)
-        direction = Direction.directions()[random.randint(0, 3)]
+        direction = Direction(2)
         step = Step(sphere, total_step, direction, arr.boundaries)
         temp_arr = copy.deepcopy(arr)
         arr.perform_total_step(i, j, step)
         assert temp_arr.legal_configuration()
-        assert_list(self, sphere.center, (0, 0.5, 0.65))
+        assert_list(self, sphere.center, (epsilon, epsilon, 0.15 + total_step))
 
     def test_3d_2_sphere(self):
-        r = 0.1 * np.sqrt(2)
-        arr = Event2DCells(2, 1, 1)
-        arr.add_third_dimension_for_sphere(0.9 + r)
-        total_step = (0.1 + 0.4 + 0.1) * np.sqrt(2)
         output_dir = garb + '/3d_1_sphere'
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.mkdir(output_dir)
+
+        r = 0.1
+        arr = Event2DCells(2, 1, 1)
+        arr.add_third_dimension_for_sphere(1)
         cell = arr.all_cells[0]
-        x1 = 0.2
-        sphere = Sphere((epsilon, x1, x1), r)
-        x2 = 0.5
-        sphere2 = Sphere((epsilon, x2, x2), r)
+        total_step = (0.1 + 0.4 + 0.1)
+        z1 = 0.2
+        sphere = Sphere((epsilon, epsilon, z1), r)
+        z2 = 0.5
+        sphere2 = Sphere((epsilon, epsilon, z2), r)
         cell.append([sphere, sphere2])
 
         assert arr.legal_configuration()
 
-        direction = Direction.directions()[random.randint(0, 3)]
+        direction = Direction(2)
         step = Step(sphere, total_step, direction, arr.boundaries)
         i, j = cell.ind[:2]
         arr.perform_total_step(i, j, step)
         assert arr.legal_configuration()
-        assert_list(self, sphere.center, (0, x1 + 0.1, x1 + 0.1))
-        assert_list(self, sphere2.center, (0, 1, 0.8))
+        assert_list(self, sphere.center, (epsilon, epsilon, 0.3))
+        assert_list(self, sphere2.center, (epsilon, epsilon, 0.8))
 
     def test_cubic_comb_transition(self):
         n_row = 40
@@ -399,6 +398,7 @@ class TestEvent2DCells(TestCase):
         print('eta= ' + str(n_per_cell * np.pi * rad ** 2))
 
         arr = Event2DCells(1, n_row, n_col)
+        arr.add_third_dimension_for_sphere(1)
         arr.generate_spheres_in_cubic_structure(n_per_cell, rad)
         total_step = np.sqrt(n_row)
         output_dir = garb + '/cubic_comb_transition'
@@ -447,6 +447,7 @@ class TestEvent2DCells(TestCase):
         print('eta= ' + str(np.pi * r1 ** 2 + (n_per_cell - 1) * np.pi * r2 ** 2))
 
         arr = Event2DCells(1, n_row, n_col)
+        arr.add_third_dimension_for_sphere(1)
         arr.generate_spheres_in_cubic_structure(n_per_cell, rads)
         total_step = 2
         output_dir = garb + '/cubic_comb_2_species_transition'

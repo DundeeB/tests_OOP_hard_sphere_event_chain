@@ -52,30 +52,6 @@ class TestSphere(TestCase):
         self.assertAlmostEqual(sphere.center[2], 1.6)
 
 
-class TestCubeBoundaries(TestCase):
-    def test_get_vertices(self):
-        cube = CubeBoundaries([1], [BoundaryType.CYCLIC])
-        self.assertEqual(cube.dim, 1)
-        vertices = cube.vertices
-        vertices_should = [(0,), (1,)]
-        for v1, v2 in zip(vertices, vertices_should):
-            self.assertEqual(v1, v2)
-
-        cube = CubeBoundaries([1, 2], [BoundaryType.CYCLIC, BoundaryType.WALL])
-        vertices = cube.vertices
-        vertices_should = [(0, 0), (1, 0), (0, 2), (1, 2)]
-        self.assertEqual(cube.dim, 2)
-        for v1, v2 in zip(vertices, vertices_should):
-            self.assertEqual(v1, v2)
-
-        cube = CubeBoundaries([1, 2, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL])
-        vertices = cube.vertices
-        vertices_should = [(0, 0, 0), (1, 0, 0), (0, 2, 0), (0, 0, 3), (0, 2, 3), (1, 0, 3), (1, 2, 0), (1, 2, 3)]
-        self.assertEqual(cube.dim, 3)
-        for v1, v2 in zip(vertices, vertices_should):
-            self.assertEqual(v1, v2)
-
-
 class TestMetric(TestCase):
     def test_dist_to_boundary(self):
         bound = CubeBoundaries([1, 2, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL])
@@ -89,7 +65,7 @@ class TestMetric(TestCase):
         sphere2 = Sphere((0.5, 2, 1), 0.3)
         diam = sphere1.rad + sphere2.rad
         direction = Direction(1)
-        bound = CubeBoundaries([3, 3, 5], 3*[BoundaryType.WALL])
+        bound = CubeBoundaries([3, 3, 5], 3 * [BoundaryType.WALL])
         d1 = Metric.dist_to_collision(sphere1, sphere2, 10, direction, bound)
         self.assertAlmostEqual(d1, 1 - diam)
         d1 = Metric.dist_to_collision(sphere1, sphere2, 0.1, direction, bound)
