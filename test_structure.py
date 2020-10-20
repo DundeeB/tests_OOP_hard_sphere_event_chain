@@ -54,7 +54,7 @@ class TestSphere(TestCase):
 
 class TestMetric(TestCase):
     def test_dist_to_boundary(self):
-        bound = CubeBoundaries([1, 2, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL])
+        bound = [1, 2, 3]
         sphere = Sphere((0.5, 0.5, 0.5), 0.1)
         direction = Direction(2)
         dist_to_hit = Metric.dist_to_wall(sphere, 3, direction, bound)
@@ -65,7 +65,7 @@ class TestMetric(TestCase):
         sphere2 = Sphere((0.5, 2, 1), 0.3)
         diam = sphere1.rad + sphere2.rad
         direction = Direction(1)
-        bound = CubeBoundaries([3, 3, 5], 3 * [BoundaryType.WALL])
+        bound = [3, 3, 5]
         d1 = Metric.dist_to_collision(sphere1, sphere2, 10, direction, bound)
         self.assertAlmostEqual(d1, 1 - diam)
         d1 = Metric.dist_to_collision(sphere1, sphere2, 0.1, direction, bound)
@@ -117,7 +117,7 @@ class TestArrayOfCells(TestCase):
     @staticmethod
     def construct_some_arr_cell():
         spheres = []
-        bound = CubeBoundaries([3, 3], 2 * [BoundaryType.CYCLIC])
+        bound = [3, 3, 3]
         cell1 = Cell((0, 0), [1, 1], (0, 0))
         cell1.random_generate_spheres(3, 3 * [0.1])
         for sphere in cell1.spheres: spheres.append(sphere)
