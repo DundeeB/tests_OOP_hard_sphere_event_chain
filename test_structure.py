@@ -21,8 +21,8 @@ class TestSphere(TestCase):
         self.assertEqual(sphere_3d.dim, 3)
 
     def test_box_it(self):
-        boundaries = CubeBoundaries([1, 1], [BoundaryType.CYCLIC for _ in range(2)])
-        sphere = Sphere((1.5, 1.5), 0.3)
+        boundaries = [1, 1, 3]
+        sphere = Sphere((1.5, 1.5, 1.5), 0.3)
         sphere.box_it(boundaries)
         self.assertGreaterEqual(sphere.center[0], 0)
         self.assertGreaterEqual(sphere.center[1], 0)
@@ -30,7 +30,7 @@ class TestSphere(TestCase):
         self.assertLessEqual(sphere.center[1], 1)
 
     def test_perform_step(self):
-        boundaries = CubeBoundaries([1, 1, 10], [BoundaryType.CYCLIC for _ in range(3)])
+        boundaries = [1, 1, 10]
 
         sphere = Sphere((0.5, 0.5, 1), 0.3)
         direction = Direction(0)
@@ -99,11 +99,12 @@ class TestCell(TestCase):
 
     def test_random_generate_spheres(self):
         cell = Cell((0, 0), [4, 4], (0, 0))
-        cell.random_generate_spheres(3, 3 * [0.5], extra_edges=[1])
+        rad, l_z = 0.5, 3
+        cell.random_generate_spheres(3, 3 * [rad], l_z=l_z)
         for sphere in cell.spheres:
             self.assertTrue(cell.center_in_cell(sphere))
             z = sphere.center[-1]
-            self.assertTrue(z > 0 and z < 1)
+            self.assertTrue(z >= rad and z <= l_z - rad)
 
     def test_transform(self):
         cell = Cell((0, 0), [4, 4], (0, 0), [Sphere((0, 1, 7), 1)])
@@ -176,56 +177,55 @@ class TestArrayOfCells(TestCase):
             cell1.random_generate_spheres(3, 0.2)
             cell2 = Cell((0, 1), [1, 1], (1,))
             cell2.random_generate_spheres(3, 0.2)
-            bound = CubeBoundaries([2, 2], 2 * [BoundaryType.CYCLIC])
+            bound = [2, 2, 3]
             arr = ArrayOfCells(2, bound, [[cell1], [cell2]])
             if not arr.overlap_2_cells(cell1, cell2):
                 draw = WriteOrLoad(output_dir, bound)
                 draw.array_of_cells_snapshot('Test direct_overlap 2 cells', arr, 'Test_overlap_2_cells')
                 break
 
-        cell = Cell((0, 0), [1, 1], (0, 0), [Sphere((0.1, 0.5), 0.2)])
-        neighbor = Cell((0, 1), [1, 1], (0, 0), [Sphere((0.1, 1.5), 0.2)])
-        arr = ArrayOfCells(2, CubeBoundaries([2, 1], 2 * [BoundaryType.CYCLIC]), [[cell], [neighbor]])
+        cell = Cell((0, 0), [1, 1], (0, 0), [Sphere((0.1, 0.5, 0.3), 0.2)])
+        neighbor = Cell((0, 1), [1, 1], (0, 0), [Sphere((0.1, 1.5, 0.3), 0.2)])
+        arr = ArrayOfCells(2, [2, 1, 1])
         self.assertTrue(arr.overlap_2_cells(cell, neighbor))
 
     def test_cushioning_array_for_boundary_cond(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries([3, 3], [BoundaryType.CYCLIC, BoundaryType.WALL])
+        arr.boundaries = [3, 3, 3]
         cush_arr = arr.cushioning_array_for_boundary_cond()
         vec = np.array([1, 1])
         for cell in cush_arr.all_cells:
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
-        bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
+        bound = [5, 5, 3]
         draw = WriteOrLoad(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_x_cyclic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries([3, 3], [BoundaryType.WALL, BoundaryType.CYCLIC])
+        arr.boundaries = [3, 3, 2]
         cush_arr = arr.cushioning_array_for_boundary_cond()
         vec = np.array([1, 1])
         for cell in cush_arr.all_cells:
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
-        bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
+        bound = [5, 5, 3]
         draw = WriteOrLoad(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_y_cylic')
 
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries([3, 3], [BoundaryType.CYCLIC, BoundaryType.CYCLIC])
+        arr.boundaries = [3, 3, 3]
         cush_arr = arr.cushioning_array_for_boundary_cond()
         vec = np.array([1, 1])
         for cell in cush_arr.all_cells:
             if len(cell.site) > 0:
                 cell.transform(cell.site + vec)
-        bound = CubeBoundaries([5, 5], arr.boundaries.boundaries_type)
+        bound = [5, 5, 3]
         draw = WriteOrLoad(output_dir, bound)
         draw.array_of_cells_snapshot('Test Cushioning', cush_arr, 'Test_Cushioning_both_cylic')
         return
 
     def test_legal_configuration(self):
         arr, _, _ = TestArrayOfCells.construct_some_arr_cell()
-        arr.boundaries = CubeBoundaries(arr.boundaries.edges, [BoundaryType.CYCLIC, BoundaryType.WALL])
         arr.random_generate_spheres(3, 0.1)
         draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Test Random Generate spheres and legal configuration',
@@ -239,7 +239,7 @@ class TestArrayOfCells(TestCase):
             for j in range(len(cells[i])):
                 cells[i][j] = arr.cells[i][j]
         arr = ArrayOfCells(arr.dim, arr.boundaries, cells)
-        arr.boundaries = CubeBoundaries(arr.boundaries.edges + np.array([-1, 0]), arr.boundaries.boundaries_type)
+        arr.boundaries = arr.boundaries + np.array([-1, 0, 0])
         draw = WriteOrLoad(output_dir, arr.boundaries)
         draw.array_of_cells_snapshot('Test rows differ columns',
                                      arr, 'TestRowsDiffCol')

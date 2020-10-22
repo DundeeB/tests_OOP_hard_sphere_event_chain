@@ -21,7 +21,7 @@ class TestStep(TestCase):
     def some_step():
         sphere = Sphere((0.5, 0.5, 0.5), 0.1)
         direction = Direction(1)
-        bound = CubeBoundaries([2, 2, 2], [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL])
+        bound = [2, 2, 2]
         step = Step(sphere, 1, direction, bound, current_step=0.1)
         return step
 
@@ -61,8 +61,9 @@ class TestEvent2DCells(TestCase):
     @staticmethod
     def some_arr():
         r = 1.0
-        eff_arr = Event2DCells(1, 3, 3, 2 * r)
-        eff_arr.random_generate_spheres(1, r)
+        l_z = 2.1 * r
+        eff_arr = Event2DCells(2, 2, 2, l_z)
+        eff_arr.random_generate_spheres(1, r, l_z)
         return eff_arr
 
     def three_spheres_test(self, sphere1, sphere2, sphere3, output_dir, total_step=7):
@@ -117,7 +118,6 @@ class TestEvent2DCells(TestCase):
 
     def test_cushion_l_x_not_l_y(self):
         arr = Event2DCells(1, 1, 2, 1)
-        arr.boundaries.boundaries_type = [BoundaryType.CYCLIC, BoundaryType.CYCLIC, BoundaryType.WALL]
         r = 0.2
         sphere1 = Sphere((0.5, 0.7, 0.5), r)
         sphere2 = Sphere((0.1, 0.5, 0.5), r)
@@ -134,7 +134,7 @@ class TestEvent2DCells(TestCase):
         cushioned = arr.cushioning_array_for_boundary_cond()
         for cell in cushioned.all_cells:
             cell.transform(cell.site + np.array([1, 0]))
-        draw.boundaries = CubeBoundaries([4, 1], 2 * [BoundaryType.WALL])
+        draw.boundaries = [4, 1]
         draw.array_of_cells_snapshot('Cushioned', cushioned, 'cushion')
 
     def test_simple_step_2_spheres(self):
@@ -270,7 +270,7 @@ class TestEvent2DCells(TestCase):
         draw.array_of_cells_snapshot('cubic structure', arr, 'cubic_struct')
 
     def test_generate_spheres_many_times_perform_large_step(self):
-        for i in range(10):
+        for i in range(1):
             arr = TestEvent2DCells.some_arr()
             cell = arr.cells[0][0]
             sphere = cell.spheres[0]
